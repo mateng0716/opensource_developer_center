@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GS-Playground — High-Fidelity Visual Simulator for Embodied AI</title>
+    <meta name="description" content="GS-Playground: 10,000 FPS photorealistic rendering, full-scene native robot support, seamless Sim2Real transfer. The next-gen simulator for vision-centric robot learning.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Light theme variables (Figma: 116-13945) */
+            --bg:   #F8FAFF;        /* Main background */
+            --bg2:  #FFFFFF;        /* Secondary background (Cards) */
+            --c1:   #2388FF;        /* Primary Blue */
+            --c2:   #005BE3;        /* Darker Blue */
+            --c3:   #E3EFFF;        /* Light Blue Accent */
+            --c4:   #22c55e;        /* Green accent */
+            --t1:   #19213D;        /* Primary text */
+            --t2:   #6D758F;        /* Secondary text */
+            --t3:   #848CA6;        /* Tertiary text */
+            --bdr:  rgba(64, 110, 164, 0.12); /* Light borders */
+            --bdr2: rgba(64, 110, 164, 0.20); /* Slightly darker borders */
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--t1); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+        .mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+        ::selection { background: rgba(35,136,255,0.22); color:#000; }
+
+        /* Gradient text */
+        .grad { background: linear-gradient(180deg,#239CFF 0%,#005BE3 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .grad-c { background: linear-gradient(180deg,#2388FF,#005BE3); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .grad-p { background: linear-gradient(180deg,#239CFF,#005BE3); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+
+        /* Cards */
+        .glass { background:rgba(255,255,255,0.9); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--bdr); box-shadow: 0px 12px 26px 0px rgba(64, 110, 164, 0.08); }
+        .glass-nav { background:rgba(248,250,255,0.92); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); border-bottom:1px solid var(--bdr); }
+        .glass-dark { background:var(--bg2); border:1px solid var(--bdr); box-shadow: 0px 8px 20px 0px rgba(64, 110, 164, 0.05); }
+
+        /* Section divider */
+        .sec { border-top: 1px solid rgba(0,0,0,0.04); }
+
+        /* Glow */
+        .glow-c  { box-shadow: 0 0 0 1px rgba(35,136,255,0.15), 0 0 32px rgba(35,136,255,0.1); }
+        .glow-vid{ box-shadow: 0 0 0 1px rgba(64,110,164,0.08), 0 20px 40px -10px rgba(64,110,164,0.1); }
+        .glow-ours{ box-shadow: 0 0 0 1px rgba(35,136,255,0.25), 0 0 20px rgba(35,136,255,0.15); }
+
+        /* Scan lines (disabled/faded for light mode) */
+        .scanlines::after { content:''; position:absolute; inset:0; pointer-events:none; z-index:2; background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,255,255,0.03) 3px,rgba(255,255,255,0.04) 4px); }
+
+        /* Tech grid (inverted for light mode) */
+        .techgrid { background-image:linear-gradient(rgba(0,0,0,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,0.03) 1px,transparent 1px); background-size:40px 40px; }
+
+        /* Section label */
+        .slabel { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--c2); opacity:.9; }
+        .slabel::before { content:'// '; opacity:.5; }
+
+        /* Pulse dot */
+        .pulse { display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--c4); animation:pdot 2s ease-in-out infinite; }
+        @keyframes pdot { 0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.3)} 50%{box-shadow:0 0 0 5px rgba(34,197,94,0)} }
+
+        /* Comparison badge */
+        .cbadge { position:absolute; top:10px; left:10px; padding:3px 9px; border-radius:9999px; font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; backdrop-filter:blur(6px); font-family:'JetBrains Mono',monospace; }
+        .cb-ours   { background:rgba(255,255,255,.9); color:#0284c7; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .cb-mujoco { background:rgba(241,245,249,.9); color:#475569; }
+        .cb-isaac  { background:rgba(226,232,240,.9); color:#334155; }
+
+        /* HUD corners */
+        .hud-corner { position:absolute; width:14px; height:14px; border-color:rgba(0,0,0,0.15); }
+        .hc-tl { top:10px; left:10px;   border-top:1.5px solid; border-left:1.5px solid; }
+        .hc-tr { top:10px; right:10px;  border-top:1.5px solid; border-right:1.5px solid; }
+        .hc-bl { bottom:10px; left:10px;  border-bottom:1.5px solid; border-left:1.5px solid; }
+        .hc-br { bottom:10px; right:10px; border-bottom:1.5px solid; border-right:1.5px solid; }
+
+        /* Contrib number badge */
+        .num-badge { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700; letter-spacing:.1em; padding:3px 10px; border-radius:4px; text-transform:uppercase; }
+
+        /* Table */
+        .stbl th { background:rgba(248,250,255,1); color:var(--t2); font-size:10px; font-weight:700; font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:.07em; padding:12px 16px; white-space:nowrap; border-bottom: 1px solid var(--bdr); }
+        .stbl td { padding:11px 16px; font-size:12px; white-space:nowrap; font-family:'JetBrains Mono',monospace; color:var(--t1); }
+        .stbl tr { border-top:1px solid rgba(64,110,164,0.06); }
+        .stbl tr.ours { background:rgba(35,136,255,0.04); }
+        .stbl tr.ours td { border-top:1px solid rgba(35,136,255,0.15); border-bottom:1px solid rgba(35,136,255,0.15); color:var(--c2); font-weight:600; }
+
+        /* Metric card accent bar */
+        .metric-bar { height:2px; border-radius:2px; margin-bottom:1.5rem; }
+
+        /* Lift hover */
+        .lift { transition:transform .22s ease, box-shadow .22s ease; }
+        .lift:hover { transform:translateY(-4px); box-shadow: 0 12px 32px -8px rgba(0,0,0,0.08); }
+
+        /* Mobile menu */
+        #mob-menu { display:none; }
+        #mob-menu.open { display:block; }
+
+        /* Cursor follow hint */
+        #cursor-hint { pointer-events:none; position:absolute; z-index:20; transition:opacity .3s; opacity:0; }
+        #home:hover #cursor-hint { opacity:1; }
+
+        /* Contribution detail alternating sections */
+        .contrib-section { position:relative; overflow:hidden; }
+        .contrib-section::before { content:''; position:absolute; width:400px; height:400px; border-radius:50%; filter:blur(80px); pointer-events:none; opacity:.08; }
+        .contrib-01::before { background:var(--c4); top:-100px; right:-100px; }
+        .contrib-02::before { background:var(--c1); top:-100px; left:-100px; }
+        .contrib-03::before { background:var(--c3); top:-100px; right:-100px; }
+
+        /* Abstract — intentionally muted */
+        .abstract-text { font-size:.875rem; line-height:1.8; color:var(--t2); max-width:720px; }
+
+        /* Application card hover */
+        .app-card { transition:transform .25s ease,border-color .25s ease, box-shadow .25s ease; }
+        .app-card:hover { transform:translateY(-6px); border-color:rgba(0,0,0,0.1); box-shadow: 0 12px 32px -8px rgba(0,0,0,0.08); }
+
+        /* Canvas cursor */
+        #home { cursor:default; }
+    </style>
+</head>
+<body>
+
+<!-- Global background ambient blobs — renders behind all sections -->
+<canvas id="bgCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;mix-blend-mode:screen"></canvas>
+
+<!-- ════════════════════════════════
+     NAV
+════════════════════════════════ -->
+<nav class="fixed top-0 left-0 right-0 z-50 glass-nav transition-shadow duration-300" id="main-nav">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16 lg:h-[68px]">
+
+            <a href="#home" class="flex items-center gap-3">
+                <!-- GS-Playground SVG Logo -->
+                <svg width="130" height="32" viewBox="0 0 130 32" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="navG1" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#2388FF"/>
+                            <stop offset="100%" stop-color="#7c84f7"/>
+                        </linearGradient>
+                        <linearGradient id="navG2" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#2388FF"/>
+                            <stop offset="100%" stop-color="#a855f7"/>
+                        </linearGradient>
+                    </defs>
+                    <!-- Icon: Gaussian splat-inspired mark -->
+                    <rect x="0" y="4" width="24" height="24" rx="6" fill="url(#navG1)"/>
+                    <!-- 3 layered ellipses suggesting Gaussian splats -->
+                    <ellipse cx="12" cy="12" rx="7" ry="5" fill="rgba(255,255,255,0.15)"/>
+                    <ellipse cx="12" cy="14" rx="5" ry="3.5" fill="rgba(255,255,255,0.2)"/>
+                    <ellipse cx="12" cy="16" rx="3" ry="2" fill="rgba(255,255,255,0.35)"/>
+                    <!-- GS text -->
+                    <text x="30" y="13" font-family="'JetBrains Mono',monospace" font-weight="700" font-size="10" fill="url(#navG2)" letter-spacing="2">GS-</text>
+                    <text x="30" y="26" font-family="'JetBrains Mono',monospace" font-weight="700" font-size="10" fill="#dde8ff" letter-spacing="1.5">PLAYGROUND</text>
+                </svg>
+                <span class="hidden sm:inline mono text-[9px] px-2 py-0.5 rounded border" style="color:var(--c1);border-color:var(--bdr2);opacity:.6">RSS 2026</span>
+            </a>
+
+            <div class="hidden lg:flex items-center gap-6">
+                <a href="#contributions" class="mono text-[11px] tracking-widest hover:text-slate-900 transition-colors" style="color:var(--t2)">CONTRIBUTIONS</a>
+                <a href="#physics"       class="mono text-[11px] tracking-widest hover:text-slate-900 transition-colors" style="color:var(--t2)">PHYSICS</a>
+                <a href="#renderer"      class="mono text-[11px] tracking-widest hover:text-slate-900 transition-colors" style="color:var(--t2)">RENDERER</a>
+                <a href="#pipeline"      class="mono text-[11px] tracking-widest hover:text-slate-900 transition-colors" style="color:var(--t2)">PIPELINE</a>
+                <a href="#benchmarks"    class="mono text-[11px] tracking-widest hover:text-slate-900 transition-colors" style="color:var(--t2)">SIM2REAL</a>
+                <a href="#applications"  class="mono text-[11px] tracking-widest hover:text-slate-900 transition-colors" style="color:var(--t2)">DEMOS</a>
+            </div>
+
+            <div class="hidden lg:flex items-center gap-3">
+                <a href="#" class="flex items-center gap-1.5 mono text-[11px] font-semibold tracking-wider hover:text-slate-900 transition-colors" style="color:var(--t2)">
+                    <i class="fas fa-file-alt text-xs" style="color:var(--c1)"></i>Paper
+                </a>
+                <a href="#opensource" class="px-5 py-2 mono text-[11px] font-bold tracking-wider rounded text-black" style="background:linear-gradient(120deg,var(--c1),var(--c2))">GET CODE</a>
+            </div>
+
+            <button id="ham-btn" class="lg:hidden p-2" style="color:var(--t2)"><i class="fas fa-bars text-lg"></i></button>
+        </div>
+    </div>
+    <div id="mob-menu" class="lg:hidden glass border-t" style="border-color:var(--bdr)">
+        <div class="max-w-7xl mx-auto px-4 py-3 space-y-1">
+            <a href="#contributions" class="block py-2 mono text-xs tracking-widest" style="color:var(--t2)">CONTRIBUTIONS</a>
+            <a href="#physics"       class="block py-2 mono text-xs tracking-widest" style="color:var(--t2)">PHYSICS</a>
+            <a href="#renderer"      class="block py-2 mono text-xs tracking-widest" style="color:var(--t2)">RENDERER</a>
+            <a href="#pipeline"      class="block py-2 mono text-xs tracking-widest" style="color:var(--t2)">PIPELINE</a>
+            <a href="#benchmarks"    class="block py-2 mono text-xs tracking-widest" style="color:var(--t2)">SIM2REAL</a>
+            <a href="#applications"  class="block py-2 mono text-xs tracking-widest" style="color:var(--t2)">DEMOS</a>
+            <div class="pt-3 flex gap-3">
+                <a href="#" class="flex-1 text-center py-2.5 mono text-xs font-bold rounded border" style="color:var(--t2);border-color:var(--bdr)"><i class="fas fa-file-alt mr-1.5"></i>Paper</a>
+                <a href="#opensource" class="flex-1 text-center py-2.5 mono text-xs font-bold rounded text-black" style="background:var(--c1)">GET CODE</a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+
+<!-- ════════════════════════════════
+     HERO / BANNER  (Mouse Interactive 3D Canvas)
+════════════════════════════════ -->
+<section id="home" class="relative min-h-screen flex flex-col justify-center pt-20 pb-16 overflow-hidden scanlines techgrid">
+    <canvas id="heroCanvas" class="absolute inset-0 w-full h-full pointer-events-none" style="z-index:1"></canvas>
+
+    <!-- Vignette (adjusted for light theme) -->
+    <div class="absolute inset-0 pointer-events-none" style="z-index:2;background:radial-gradient(ellipse 65% 60% at 50% 50%,transparent 25%,rgba(255,255,255,0.88) 100%)"></div>
+
+    <!-- Mouse coordinate readout (follows mouse) -->
+    <div id="coord-hud" class="absolute mono text-[10px] pointer-events-none hidden lg:block" style="z-index:10;color:rgba(35,136,255,0.8);transition:none"></div>
+
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center" style="z-index:5">
+
+        <!-- Badge -->
+        <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full mb-8 mono text-[11px] font-semibold tracking-wider"
+             style="border:1px solid var(--bdr2);background:rgba(35,136,255,0.07);color:var(--c1)">
+            <span class="pulse" style="width:6px;height:6px"></span>
+            EMBODIED AI SIMULATION &nbsp;·&nbsp; RSS 2026 &nbsp;·&nbsp; <span style="opacity:.7">CLICK CANVAS TO INTERACT</span>
+        </div>
+
+        <!-- Main title -->
+        <h1 class="font-black tracking-tight text-slate-900 mb-6" style="font-size:clamp(2.4rem,6.5vw,5.2rem);line-height:1.06">
+            GS-Playground<br>
+            <span class="grad-c">High-Fidelity Visual Simulator</span><br>
+            <span style="font-size:.65em;font-weight:700;color:var(--t2)">for Embodied AI</span>
+        </h1>
+
+        <!-- Link buttons: Paper / GitHub / HuggingFace / Demo -->
+        <div class="flex flex-wrap justify-center gap-3 mb-10">
+            <a href="#" class="lift inline-flex items-center gap-1.5 px-5 py-2 mono text-[11px] font-bold tracking-wider rounded-lg border transition-all hover:bg-slate-50"
+               style="color:var(--t1);border-color:var(--bdr2)">
+                <i class="fas fa-file-alt text-xs" style="color:var(--c1)"></i>Paper
+            </a>
+            <a href="#" class="lift inline-flex items-center gap-1.5 px-5 py-2 mono text-[11px] font-bold tracking-wider rounded-lg border transition-all hover:bg-slate-50"
+               style="color:var(--t1);border-color:var(--bdr2)">
+                <i class="fab fa-github text-xs" style="color:var(--c1)"></i>GitHub
+            </a>
+            <a href="#" class="lift inline-flex items-center gap-1.5 px-5 py-2 mono text-[11px] font-bold tracking-wider rounded-lg border transition-all hover:bg-slate-50"
+               style="color:var(--t1);border-color:var(--bdr2)">
+                <span style="font-size:13px;line-height:1">🤗</span>HuggingFace
+            </a>
+            <a href="#demo" class="lift inline-flex items-center gap-1.5 px-5 py-2 mono text-[11px] font-bold tracking-wider rounded-lg text-slate-900 transition-all"
+               style="background:linear-gradient(120deg,var(--c1),var(--c2));box-shadow:0 4px 18px rgba(35,136,255,0.25)">
+                <i class="fas fa-play-circle text-xs"></i>Demo
+            </a>
+        </div>
+
+        <!-- Quick stat strip -->
+        <div class="inline-grid grid-cols-4 divide-x glass rounded-2xl" style="divide-color:rgba(0,0,0,0.06)">
+            <div class="px-5 py-3.5 text-center">
+                <div class="mono font-black grad-c" style="font-size:1.7rem">10K</div>
+                <div class="mono text-[9px] mt-1 tracking-wider" style="color:var(--t3)">FPS @ 640×480</div>
+            </div>
+            <div class="px-5 py-3.5 text-center">
+                <div class="mono font-black grad-c" style="font-size:1.7rem">4096</div>
+                <div class="mono text-[9px] mt-1 tracking-wider" style="color:var(--t3)">PARALLEL SCENES</div>
+            </div>
+            <div class="px-5 py-3.5 text-center">
+                <div class="mono font-black grad-c" style="font-size:1.7rem">90%</div>
+                <div class="mono text-[9px] mt-1 tracking-wider" style="color:var(--t3)">GAUSSIAN PRUNING</div>
+            </div>
+            <div class="px-5 py-3.5 text-center">
+                <div class="mono font-black grad-c" style="font-size:1.7rem">&lt;5m</div>
+                <div class="mono text-[9px] mt-1 tracking-wider" style="color:var(--t3)">REAL2SIM PIPELINE</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ════════════════════════════════
+     DEMO VIDEO
+════════════════════════════════ -->
+<section id="demo" class="py-20 sec bg-[rgba(35,136,255,0.018)]">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-8">
+            <p class="slabel mb-3">system demonstration</p>
+            <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-3">GS-Playground in Action</h2>
+            <p class="max-w-xl mx-auto text-sm leading-relaxed" style="color:var(--t2)">
+                Photorealistic 3DGS rendering synchronized with parallel physics—robots training at scale across manipulation, locomotion, and navigation.
+            </p>
+        </div>
+
+        <div class="relative rounded-2xl overflow-hidden glow-vid">
+            <div class="hud-corner hc-tl"></div><div class="hud-corner hc-tr"></div>
+            <div class="hud-corner hc-bl"></div><div class="hud-corner hc-br"></div>
+            <!-- HUD top bar -->
+            <div class="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-5 py-3"
+                 style="background:linear-gradient(rgba(255,255,255,0.88),transparent)">
+                <div class="flex items-center gap-2.5">
+                    <span class="pulse"></span>
+                    <span class="mono text-[11px] tracking-wider" style="color:var(--c1); font-weight:700;">GS-PLAYGROUND · LIVE RENDER</span>
+                </div>
+                <div class="mono text-[10px] font-bold" style="color:var(--c4)">■ 10,000 FPS</div>
+            </div>
+            <video class="w-full object-cover block" autoplay loop muted controls style="max-height:70vh">
+                <source src="reference/飞书20260422-184217.mp4" type="video/mp4">
+                Your browser does not support video playback.
+            </video>
+            <div class="absolute bottom-0 left-0 right-0 h-14 pointer-events-none" style="background:linear-gradient(transparent,rgba(255,255,255,0.65))"></div>
+        </div>
+        <p class="text-center mono text-[10px] mt-3" style="color:var(--t3)">// Use controls to unmute audio · Click ⛶ for fullscreen with sound</p>
+    </div>
+</section>
+
+
+
+
+<!-- ════════════════════════════════
+     KEY CONTRIBUTIONS  (overview cards + table)
+════════════════════════════════ -->
+<section id="contributions" class="py-24 sec bg-[rgba(35,136,255,0.015)] techgrid">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        <div class="text-center mb-14">
+            <p class="slabel mb-4">key contributions</p>
+            <h2 class="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">Three Core Breakthroughs</h2>
+            <p class="max-w-2xl mx-auto text-base leading-relaxed" style="color:var(--t2)">
+                GS-Playground addresses three fundamental bottlenecks that have prevented vision-centric robot learning from scaling.
+            </p>
+        </div>
+
+        <!-- 3 Overview Cards -->
+        <div class="grid md:grid-cols-3 gap-5 mb-14">
+            <!-- C01 -->
+            <a href="#physics" class="glass rounded-2xl p-7 relative overflow-hidden group lift glow-c block hover:border-emerald-500/25 transition-colors">
+                <div class="absolute top-0 right-0 w-40 h-40 rounded-full blur-3xl -mr-16 -mt-16 group-hover:scale-125 transition-transform duration-500" style="background:rgba(34,197,94,0.07)"></div>
+                <div class="mono text-[9px] tracking-widest mb-4" style="color:var(--c4);opacity:.7">CONTRIBUTION 01</div>
+                <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl mb-4" style="background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.2);color:var(--c4)">
+                    <i class="fas fa-microchip"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 mb-2">General-Purpose Embodied Simulation Platform</h3>
+                <p class="text-sm leading-relaxed mb-5" style="color:var(--t2)">Custom parallel physics engine with full-scene native support for all robot morphologies, cross-platform, superior contact stability.</p>
+                <div class="flex flex-wrap gap-1.5">
+                    <span class="mono text-[9px] px-2 py-0.5 rounded" style="background:rgba(34,197,94,0.1);color:var(--c4);border:1px solid rgba(34,197,94,0.2)">CPU/GPU</span>
+                    <span class="mono text-[9px] px-2 py-0.5 rounded" style="background:rgba(34,197,94,0.1);color:var(--c4);border:1px solid rgba(34,197,94,0.2)">Win/Linux/Mac</span>
+                    <span class="mono text-[9px] px-2 py-0.5 rounded" style="background:rgba(34,197,94,0.1);color:var(--c4);border:1px solid rgba(34,197,94,0.2)">Multi-Modal Sensors</span>
+                </div>
+            </a>
+
+            <!-- C02 -->
+            <a href="#renderer" class="glass rounded-2xl p-7 relative overflow-hidden group lift glow-c block hover:border-cyan-500/30 transition-colors">
+                <div class="absolute top-0 right-0 w-40 h-40 rounded-full blur-3xl -mr-16 -mt-16 group-hover:scale-125 transition-transform duration-500" style="background:rgba(35,136,255,0.07)"></div>
+                <div class="mono text-[9px] tracking-widest mb-4" style="color:var(--c1);opacity:.7">CONTRIBUTION 02</div>
+                <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl mb-4" style="background:rgba(35,136,255,0.12);border:1px solid rgba(35,136,255,0.2);color:var(--c1)">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 mb-2">Memory-Efficient Batch 3DGS Rendering</h3>
+                <p class="text-sm leading-relaxed mb-5" style="color:var(--t2)">10,000 FPS photorealistic rendering across 2,048 parallel scenes on a single GPU. 90%+ Gaussian compression, PSNR drop &lt;0.05.</p>
+                <div class="flex flex-wrap gap-1.5">
+                    <span class="mono text-[9px] px-2 py-0.5 rounded" style="background:rgba(35,136,255,0.1);color:var(--c1);border:1px solid rgba(35,136,255,0.2)">10K FPS</span>
+                    <span class="mono text-[9px] px-2 py-0.5 rounded" style="background:rgba(35,136,255,0.1);color:var(--c1);border:1px solid rgba(35,136,255,0.2)">RLGK Sync</span>
+                    <span class="mono text-[9px] px-2 py-0.5 rounded" style="background:rgba(35,136,255,0.1);color:var(--c1);border:1px solid rgba(35,136,255,0.2)">SpeedySplat</span>
+                </div>
+            </a>
+
+            <!-- C03 -->
+            <a href="#pipeline" class="glass rounded-2xl p-7 relative overflow-hidden group lift glow-c block hover:border-purple-500/25 transition-colors">
+                <div class="absolute top-0 right-0 w-40 h-40 rounded-full blur-3xl -mr-16 -mt-16 group-hover:scale-125 transition-transform duration-500" style="background:rgba(168,85,247,0.07)"></div>
+                <div class="mono text-[9px] tracking-widest mb-4" style="color:var(--c3);opacity:.7">CONTRIBUTION 03</div>
+                <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl mb-4" style="background:rgba(168,85,247,0.12);border:1px solid rgba(168,85,247,0.2);color:var(--c3)">
+                    <i class="fas fa-magic"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 mb-2">Automated "Sim-Ready" Real2Sim Workflow</h3>
+                <p class="text-sm leading-relaxed mb-5" style="color:var(--t2)">Single RGB image → fully simulation-ready digital twin with 3DGS, mesh, 6D pose, in under 5 minutes. Zero manual modeling.</p>
+                <div class="flex flex-wrap gap-1.5">
+                    <span class="mono text-[9px] px-2 py-0.5 rounded" style="background:rgba(168,85,247,0.1);color:var(--c3);border:1px solid rgba(168,85,247,0.2)">Auto Segmentation</span>
+                    <span class="mono text-[9px] px-2 py-0.5 rounded" style="background:rgba(168,85,247,0.1);color:var(--c3);border:1px solid rgba(168,85,247,0.2)">3DGS Assets</span>
+                    <span class="mono text-[9px] px-2 py-0.5 rounded" style="background:rgba(168,85,247,0.1);color:var(--c3);border:1px solid rgba(168,85,247,0.2)">Digital Twin</span>
+                </div>
+            </a>
+        </div>
+
+        <!-- Simulator comparison table -->
+        <div>
+            <p class="slabel mb-5">simulator comparison</p>
+            <div class="overflow-x-auto rounded-2xl glow-c" style="box-shadow: 0 4px 24px -4px rgba(0,0,0,0.03);">
+                <table class="w-full stbl min-w-[760px] glass">
+                    <thead>
+                        <tr>
+                            <th class="text-left">Simulator</th>
+                            <th>Physics</th>
+                            <th>Batch</th>
+                            <th>Fidelity</th>
+                            <th>3DGS Envs</th>
+                            <th>Dynamic 3DGS</th>
+                            <th>FPS</th>
+                            <th>Platform</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="color:var(--t2)"><td class="font-medium" style="color:var(--t1)">MuJoCo/MJX</td><td>Brax/MJX</td><td>CPU/GPU</td><td style="color:var(--t3)">+</td><td style="color:var(--t3)">—</td><td style="color:#f43f5e">✕</td><td style="color:var(--t3)">—</td><td>Linux</td></tr>
+                        <tr style="color:var(--t2)"><td class="font-medium" style="color:var(--t1)">IsaacLab</td><td>PhysX 5</td><td>GPU</td><td style="color:var(--t2)">++</td><td style="color:var(--t3)">—</td><td style="color:#f43f5e">✕</td><td style="color:var(--t3)">—</td><td>Linux</td></tr>
+                        <tr style="color:var(--t2)"><td class="font-medium" style="color:var(--t1)">Genesis</td><td>Taichi</td><td>GPU</td><td style="color:var(--t3)">+</td><td style="color:var(--t3)">—</td><td style="color:#f43f5e">✕</td><td style="color:var(--t3)">—</td><td>Win/Linux/Mac</td></tr>
+                        <tr style="color:var(--t2)"><td class="font-medium" style="color:var(--t1)">GaussGym</td><td>PhysX 4</td><td>GPU</td><td style="color:var(--c4)">+++ 3DGS</td><td>≤4096</td><td style="color:#f43f5e">✕</td><td style="color:var(--t3)">—</td><td>Linux</td></tr>
+                        <tr class="ours">
+                            <td class="font-black text-slate-900">
+                                <span class="inline-flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full" style="background:var(--c1);box-shadow:0 0 6px var(--c1)"></span>
+                                    GS-Playground
+                                </span>
+                            </td>
+                            <td style="color:var(--c1)">Self-Dev.</td>
+                            <td style="color:var(--c1)">CPU/GPU</td>
+                            <td style="color:var(--c4)" class="font-bold">+++ 3DGS</td>
+                            <td class="font-bold text-slate-900">≤4096</td>
+                            <td style="color:var(--c4)" class="font-bold">✓</td>
+                            <td class="font-black text-slate-900" style="text-shadow:0 0 12px rgba(35,136,255,.2)">~10,000</td>
+                            <td style="color:var(--c1)">W/L/M</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="mono text-[10px] mt-2 pl-1" style="color:var(--t3)">// FPS at 640×480 · NVIDIA RTX 4090 + Intel i9-14900K</p>
+        </div>
+    </div>
+</section>
+
+
+<!-- ════════════════════════════════
+     CONTRIBUTION 01: Physics Engine
+     Layout: text LEFT, images RIGHT
+════════════════════════════════ -->
+<section id="physics" class="py-24 sec contrib-section contrib-01">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col lg:flex-row gap-16 items-center">
+
+            <!-- Text -->
+            <div class="lg:w-1/2">
+                <div class="num-badge mb-5 inline-block" style="background:rgba(34,197,94,0.12);color:var(--c4);border:1px solid rgba(34,197,94,0.25)">Contribution 01</div>
+                <h2 class="text-3xl sm:text-4xl font-bold text-slate-900 mb-2">General-Purpose Parallel Physics Engine</h2>
+                <p class="text-lg font-medium mb-6" style="color:var(--c4)">Full-scene native support — all robots, all tasks, all platforms.</p>
+                <p class="text-sm leading-relaxed mb-8" style="color:var(--t2)">
+                    A ground-up, cross-platform (Windows, Linux, macOS) parallel physics engine supporting both GPU and CPU backends.
+                    Uses a velocity-impulse formulation with Constraint Island parallelization for linear performance scaling.
+                    Provides high-fidelity physical dynamics and comprehensive sensor integration—RGB cameras, LiDAR,
+                    force/contact sensors—across diverse robot embodiments: quadrupeds, humanoids, manipulators.
+                </p>
+
+                <!-- Performance bars -->
+                <div class="glass rounded-xl p-6 mb-6">
+                    <p class="mono text-[11px] mb-5" style="color:var(--t3)">// N=50 humanoids · single environment · AMD 9950X + RTX 5090</p>
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between mono text-xs mb-1.5">
+                                <span class="text-slate-900 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full inline-block" style="background:var(--c1)"></span>GS-Playground</span>
+                                <span style="color:var(--c1)">1,015 FPS</span>
+                            </div>
+                            <div class="h-2.5 rounded-full overflow-hidden" style="background:rgba(0,0,0,0.06)">
+                                <div class="h-full rounded-full" style="width:100%;background:linear-gradient(90deg,var(--c1),var(--c2))"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mono text-xs mb-1.5">
+                                <span style="color:var(--t2)">MuJoCo</span>
+                                <span style="color:var(--t3)">32 FPS</span>
+                            </div>
+                            <div class="h-2.5 rounded-full overflow-hidden" style="background:rgba(0,0,0,0.06)">
+                                <div class="h-full rounded-full" style="width:3.1%;background:var(--t3)"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mono text-xs mb-1.5">
+                                <span style="color:var(--t3)">MjWarp</span>
+                                <span style="color:#f43f5e" class="text-[10px]">1.71 FPS ↯ collapse</span>
+                            </div>
+                            <div class="h-2.5 rounded-full overflow-hidden" style="background:rgba(0,0,0,0.06)">
+                                <div class="h-full rounded-full" style="width:0.2%;background:rgba(244,63,94,0.4)"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex gap-6 mt-5 pt-4" style="border-top:1px solid var(--bdr)">
+                        <div class="text-center"><div class="mono font-black text-slate-900 text-lg">32×</div><div class="mono text-[9px] mt-0.5" style="color:var(--t3)">vs MuJoCo</div></div>
+                        <div class="text-center"><div class="mono font-black grad-c text-lg">~600×</div><div class="mono text-[9px] mt-0.5" style="color:var(--t3)">vs MjWarp</div></div>
+                        <div class="text-center"><div class="mono font-black text-slate-900 text-lg">3+</div><div class="mono text-[9px] mt-0.5" style="color:var(--t3)">platforms</div></div>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap gap-2">
+                    <span class="mono text-[10px] px-2.5 py-1 rounded" style="background:rgba(34,197,94,0.09);color:var(--c4);border:1px solid rgba(34,197,94,0.18)">CPU / GPU Backends</span>
+                    <span class="mono text-[10px] px-2.5 py-1 rounded" style="background:rgba(34,197,94,0.09);color:var(--c4);border:1px solid rgba(34,197,94,0.18)">Win / Linux / macOS</span>
+                    <span class="mono text-[10px] px-2.5 py-1 rounded" style="background:rgba(34,197,94,0.09);color:var(--c4);border:1px solid rgba(34,197,94,0.18)">MJCF Compatible</span>
+                    <span class="mono text-[10px] px-2.5 py-1 rounded" style="background:rgba(34,197,94,0.09);color:var(--c4);border:1px solid rgba(34,197,94,0.18)">LiDAR + Force Sensors</span>
+                </div>
+            </div>
+
+            <!-- Images -->
+            <div class="lg:w-1/2 space-y-4">
+                <p class="slabel mb-3">stability benchmark — boston dynamics spot (10ms timestep)</p>
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="relative">
+                        <div class="cbadge cb-mujoco">MuJoCo</div>
+                        <img src="reference/GS_Playground_RSS2026/Assets/Figures/images/boston_spot/mujoco_spot_after.jpg"
+                             alt="MuJoCo Spot drift" class="w-full h-36 object-cover rounded-xl" style="border:1px solid var(--bdr)">
+                        <p class="mono text-[9px] mt-1.5 text-center" style="color:var(--t3)">Base drift</p>
+                    </div>
+                    <div class="relative">
+                        <div class="cbadge cb-isaac">Isaac Sim</div>
+                        <img src="reference/GS_Playground_RSS2026/Assets/Figures/images/boston_spot/isaac_spot_after.jpg"
+                             alt="Isaac Spot" class="w-full h-36 object-cover rounded-xl" style="border:1px solid var(--bdr)">
+                        <p class="mono text-[9px] mt-1.5 text-center" style="color:var(--t3)">Instability</p>
+                    </div>
+                    <div class="relative">
+                        <div class="cbadge cb-ours">Ours ✦</div>
+                        <img src="reference/GS_Playground_RSS2026/Assets/Figures/images/boston_spot/ours_spot_after.jpg"
+                             alt="GS-Playground Spot" class="w-full h-36 object-cover rounded-xl glow-ours">
+                        <p class="mono text-[9px] mt-1.5 text-center" style="color:var(--c1)">Stable ✓</p>
+                    </div>
+                </div>
+                <!-- Store scene -->
+                <div class="relative rounded-xl overflow-hidden">
+                    <img src="reference/GS_Playground_RSS2026/Assets/Figures/images/store/store_mujoco.jpg"
+                         alt="Complex multi-body scene" class="w-full h-48 object-cover" style="border:1px solid var(--bdr)">
+                    <div class="absolute inset-0" style="background:linear-gradient(to top,rgba(255,255,255,.75),transparent 50%)"></div>
+                    <div class="absolute bottom-3 left-3">
+                        <span class="mono text-[10px] font-bold px-2 py-1 rounded" style="background:rgba(34,197,94,0.75);color:#000">Complex Multi-Body Scene — Stable Equilibrium</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ════════════════════════════════
+     CONTRIBUTION 02: Batch 3DGS Renderer
+     Layout: images LEFT, text RIGHT
+════════════════════════════════ -->
+<section id="renderer" class="py-24 sec bg-[rgba(35,136,255,0.015)] contrib-section contrib-02">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col-reverse lg:flex-row gap-16 items-center">
+
+            <!-- Images (left on desktop) -->
+            <div class="lg:w-1/2 space-y-4">
+                <p class="slabel mb-3">rendering fidelity comparison</p>
+                <!-- Teaser: all robot embodiments trained in GS-Playground -->
+                <div class="rounded-xl overflow-hidden glow-c">
+                    <img src="reference/teaser_extracted.jpg" alt="GS-Playground — diverse embodiments across tasks" class="w-full object-cover">
+                </div>
+                <!-- Newton cradle comparison -->
+                <p class="slabel">newton's cradle — momentum conservation (post-impact)</p>
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="relative">
+                        <div class="cbadge cb-mujoco">MuJoCo</div>
+                        <img src="reference/GS_Playground_RSS2026/Assets/Figures/images/newton_cradle/mujoco_post_impact.jpg"
+                             alt="MuJoCo cradle" class="w-full h-32 object-cover rounded-xl" style="border:1px solid var(--bdr)">
+                    </div>
+                    <div class="relative">
+                        <div class="cbadge cb-isaac">Isaac Sim</div>
+                        <img src="reference/GS_Playground_RSS2026/Assets/Figures/images/newton_cradle/isaac_post_impact.jpg"
+                             alt="Isaac cradle" class="w-full h-32 object-cover rounded-xl" style="border:1px solid var(--bdr)">
+                    </div>
+                    <div class="relative">
+                        <div class="cbadge cb-ours">Ours ✦</div>
+                        <img src="reference/GS_Playground_RSS2026/Assets/Figures/images/newton_cradle/ours_post_impact.jpg"
+                             alt="GS-Playground cradle" class="w-full h-32 object-cover rounded-xl glow-ours">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Text (right on desktop) -->
+            <div class="lg:w-1/2">
+                <div class="num-badge mb-5 inline-block" style="background:rgba(35,136,255,0.12);color:var(--c1);border:1px solid rgba(35,136,255,0.25)">Contribution 02</div>
+                <h2 class="text-3xl sm:text-4xl font-bold text-slate-900 mb-2">Memory-Efficient Batch 3DGS Renderer</h2>
+                <p class="text-lg font-medium mb-6" style="color:var(--c1)">10,000 FPS — photorealistic rendering at unprecedented scale.</p>
+                <p class="text-sm leading-relaxed mb-8" style="color:var(--t2)">
+                    A specialized point-pruning strategy (inspired by PUP 3DGS and SpeedySplat) reduces Gaussians by over 90%
+                    while keeping the PSNR drop below 0.05—imperceptible to visuomotor policies.
+                    Rigid-Link Gaussian Kinematics (RLGK) binds Gaussian clusters to rigid bodies for
+                    zero-overhead, artifact-free dynamic rendering.
+                    The result: 2,048 scenes simultaneously at 10,000 FPS on a single RTX 4090.
+                </p>
+
+                <!-- Key metrics grid -->
+                <div class="grid grid-cols-3 gap-3 mb-8">
+                    <div class="glass rounded-xl p-4 text-center">
+                        <div class="mono font-black grad-c" style="font-size:1.6rem">10K</div>
+                        <div class="mono text-[9px] mt-1" style="color:var(--t3)">FPS @ 640×480</div>
+                    </div>
+                    <div class="glass rounded-xl p-4 text-center">
+                        <div class="mono font-black grad-c" style="font-size:1.6rem">2048</div>
+                        <div class="mono text-[9px] mt-1" style="color:var(--t3)">Parallel scenes</div>
+                    </div>
+                    <div class="glass rounded-xl p-4 text-center">
+                        <div class="mono font-black grad-c" style="font-size:1.6rem">90%</div>
+                        <div class="mono text-[9px] mt-1" style="color:var(--t3)">Gaussian pruned</div>
+                    </div>
+                </div>
+
+                <!-- RLGK callout -->
+                <div class="rounded-xl p-4 mb-6 glass-dark">
+                    <div class="mono text-[10px] font-bold mb-1.5" style="color:var(--c1)">RLGK — Rigid-Link Gaussian Kinematics</div>
+                    <p class="text-xs leading-relaxed" style="color:var(--t2)">Binds 3D Gaussian clusters to physics rigid bodies. Visual state updates incur zero additional overhead—enabling perfect physics-render synchronization at any speed.</p>
+                </div>
+
+                <div class="flex flex-wrap gap-2">
+                    <span class="mono text-[10px] px-2.5 py-1 rounded" style="background:rgba(35,136,255,0.09);color:var(--c1);border:1px solid rgba(35,136,255,0.18)">Batch-3DGS</span>
+                    <span class="mono text-[10px] px-2.5 py-1 rounded" style="background:rgba(35,136,255,0.09);color:var(--c1);border:1px solid rgba(35,136,255,0.18)">RLGK Zero-Overhead Sync</span>
+                    <span class="mono text-[10px] px-2.5 py-1 rounded" style="background:rgba(35,136,255,0.09);color:var(--c1);border:1px solid rgba(35,136,255,0.18)">SpeedySplat Pruning</span>
+                    <span class="mono text-[10px] px-2.5 py-1 rounded" style="background:rgba(35,136,255,0.09);color:var(--c1);border:1px solid rgba(35,136,255,0.18)">PSNR drop &lt;0.05</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ════════════════════════════════
+     CONTRIBUTION 03: Real2Sim Pipeline
+     Layout: text LEFT, images RIGHT
+════════════════════════════════ -->
+<section id="pipeline" class="py-24 sec contrib-section contrib-03">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col lg:flex-row gap-16 items-center">
+
+            <!-- Text -->
+            <div class="lg:w-1/2">
+                <div class="num-badge mb-5 inline-block" style="background:rgba(168,85,247,0.12);color:var(--c3);border:1px solid rgba(168,85,247,0.25)">Contribution 03</div>
+                <h2 class="text-3xl sm:text-4xl font-bold text-slate-900 mb-2">Automated "Sim-Ready" Real2Sim Pipeline</h2>
+                <p class="text-lg font-medium mb-6" style="color:var(--c3)">Photo → simulation in &lt;5 minutes. Zero manual modeling.</p>
+                <p class="text-sm leading-relaxed mb-8" style="color:var(--t2)">
+                    Users input a single RGB image and receive a complete, simulation-ready digital twin—
+                    including 3DGS scene representation, object meshes, and sub-millimeter pose estimates—
+                    in under five minutes. The pipeline handles object detection, segmentation, background
+                    inpainting, 3DGS reconstruction, and scale-consistent pose alignment automatically.
+                </p>
+
+                <!-- Pipeline steps compact -->
+                <div class="space-y-2 mb-8">
+                    <div class="flex items-center gap-3 text-sm">
+                        <span class="mono text-[10px] w-16 text-right shrink-0" style="color:var(--t3)">INPUT</span>
+                        <div class="w-px h-6 shrink-0" style="background:var(--bdr2)"></div>
+                        <span class="text-slate-900 font-medium">Single RGB image</span>
+                    </div>
+                    <div class="flex items-center gap-3 text-sm">
+                        <span class="mono text-[10px] w-16 text-right shrink-0" style="color:var(--t3)">01</span>
+                        <div class="w-px h-6 shrink-0" style="background:var(--bdr)"></div>
+                        <span style="color:var(--t2)">Object detection — <span class="mono text-[11px]">Grounding DINO</span></span>
+                    </div>
+                    <div class="flex items-center gap-3 text-sm">
+                        <span class="mono text-[10px] w-16 text-right shrink-0" style="color:var(--t3)">02</span>
+                        <div class="w-px h-6 shrink-0" style="background:var(--bdr)"></div>
+                        <span style="color:var(--t2)">Segmentation + Background inpainting — <span class="mono text-[11px]">SAM2 + LaMa</span> <span class="mono text-[10px]" style="color:var(--c3)">~25s</span></span>
+                    </div>
+                    <div class="flex items-center gap-3 text-sm">
+                        <span class="mono text-[10px] w-16 text-right shrink-0" style="color:var(--t3)">03</span>
+                        <div class="w-px h-6 shrink-0" style="background:var(--bdr)"></div>
+                        <span style="color:var(--t2)">3DGS + Mesh reconstruction — <span class="mono text-[11px]">SAM-3D + AnySplat</span> <span class="mono text-[10px]" style="color:var(--c3)">~18s</span></span>
+                    </div>
+                    <div class="flex items-center gap-3 text-sm">
+                        <span class="mono text-[10px] w-16 text-right shrink-0" style="color:var(--t3)">04</span>
+                        <div class="w-px h-6 shrink-0" style="background:var(--bdr)"></div>
+                        <span style="color:var(--t2)">Sub-millimeter pose alignment + 3DGS pruning</span>
+                    </div>
+                    <div class="flex items-center gap-3 text-sm">
+                        <span class="mono text-[10px] w-16 text-right shrink-0" style="color:var(--c3)">OUTPUT</span>
+                        <div class="w-px h-6 shrink-0" style="background:var(--bdr2)"></div>
+                        <span class="text-slate-900 font-medium">3DGS + Mesh + 6D Pose — <span style="color:var(--c3)">Sim-ready in &lt;5 minutes</span></span>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap gap-2">
+                    <span class="mono text-[10px] px-2.5 py-1 rounded" style="background:rgba(168,85,247,0.09);color:var(--c3);border:1px solid rgba(168,85,247,0.18)">Grounding DINO</span>
+                    <span class="mono text-[10px] px-2.5 py-1 rounded" style="background:rgba(168,85,247,0.09);color:var(--c3);border:1px solid rgba(168,85,247,0.18)">SAM-3D</span>
+                    <span class="mono text-[10px] px-2.5 py-1 rounded" style="background:rgba(168,85,247,0.09);color:var(--c3);border:1px solid rgba(168,85,247,0.18)">AnySplat</span>
+                    <span class="mono text-[10px] px-2.5 py-1 rounded" style="background:rgba(168,85,247,0.09);color:var(--c3);border:1px solid rgba(168,85,247,0.18)">LaMa Inpainting</span>
+                </div>
+            </div>
+
+            <!-- Images -->
+            <div class="lg:w-1/2 space-y-4">
+                <p class="slabel mb-3">real2sim — before &amp; after asset placement</p>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="relative overflow-hidden rounded-xl">
+                        <img src="reference/GS_Playground_RSS2026/Assets/Figures/images/boston_spot/ours_spot_init.jpg"
+                             alt="Initial pose" class="w-full h-44 object-cover" style="border:1px solid var(--bdr)">
+                        <div class="absolute bottom-0 left-0 right-0 p-2" style="background:linear-gradient(transparent,rgba(255,255,255,.8))">
+                            <span class="mono text-[9px] font-bold" style="color:var(--t3)">Initial state</span>
+                        </div>
+                    </div>
+                    <div class="relative overflow-hidden rounded-xl glow-ours">
+                        <img src="reference/GS_Playground_RSS2026/Assets/Figures/images/boston_spot/ours_spot_after.jpg"
+                             alt="Sim-ready asset" class="w-full h-44 object-cover">
+                        <div class="absolute bottom-0 left-0 right-0 p-2" style="background:linear-gradient(transparent,rgba(255,255,255,.8))">
+                            <span class="mono text-[9px] font-bold" style="color:var(--c1)">Sim-ready ✓</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Timing callout -->
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="glass rounded-xl p-4 text-center">
+                        <div class="mono font-bold text-slate-900 text-base">25<span class="text-xs ml-0.5" style="color:var(--c3)">s</span></div>
+                        <div class="mono text-[9px] mt-1" style="color:var(--t3)">Segment + Inpaint</div>
+                    </div>
+                    <div class="glass rounded-xl p-4 text-center">
+                        <div class="mono font-bold text-slate-900 text-base">8<span class="text-xs ml-0.5" style="color:var(--c3)">s</span></div>
+                        <div class="mono text-[9px] mt-1" style="color:var(--t3)">AnySplat recon</div>
+                    </div>
+                    <div class="glass rounded-xl p-4 text-center" style="border-color:rgba(168,85,247,0.25)">
+                        <div class="mono font-bold grad-p text-base">&lt;5<span class="text-xs ml-0.5">min</span></div>
+                        <div class="mono text-[9px] mt-1" style="color:var(--t3)">End-to-end</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ════════════════════════════════
+     BENCHMARKS & APPLICATIONS — Seamless Sim2Real
+════════════════════════════════ -->
+<section id="benchmarks" class="py-24 sec techgrid" style="background:rgba(35,136,255,0.025)">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-3xl mx-auto mb-14">
+            <p class="slabel mb-4">policy experiments</p>
+            <h2 class="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">Seamless Sim2Real Transfer</h2>
+            <p class="text-base leading-relaxed" style="color:var(--t2)">
+                Rigid-Link Gaussian Kinematics (RLGK) synchronizes the visual and physical states with zero overhead—
+                closing perceptual and physical reality gaps simultaneously.
+                Train in simulation. Deploy directly. No fine-tuning required.
+            </p>
+        </div>
+
+        <!-- 4 Metric Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
+            <div class="glass rounded-2xl p-7 text-center relative overflow-hidden lift">
+                <div class="metric-bar" style="background:linear-gradient(90deg,var(--c1),#38bdf8)"></div>
+                <div class="mono font-black text-slate-900" style="font-size:2.6rem">10<span class="text-xl ml-1" style="color:var(--c1)">min</span></div>
+                <div class="text-sm mt-3 leading-relaxed" style="color:var(--t2)">Quadruped (Go2)<br>locomotion convergence</div>
+                <div class="mono text-[9px] mt-2" style="color:var(--t3)">1,024 parallel envs</div>
+            </div>
+            <div class="glass rounded-2xl p-7 text-center relative overflow-hidden lift">
+                <div class="metric-bar" style="background:linear-gradient(90deg,var(--c3),var(--c2))"></div>
+                <div class="mono font-black text-slate-900" style="font-size:2.6rem">6<span class="text-xl ml-1" style="color:var(--c3)">hr</span></div>
+                <div class="text-sm mt-3 leading-relaxed" style="color:var(--t2)">Humanoid (G1)<br>walking policy training</div>
+                <div class="mono text-[9px] mt-2" style="color:var(--t3)">2,048 parallel envs</div>
+            </div>
+            <div class="glass rounded-2xl p-7 text-center relative overflow-hidden lift">
+                <div class="metric-bar" style="background:linear-gradient(90deg,var(--c4),#10b981)"></div>
+                <div class="mono font-black grad-c" style="font-size:2.6rem">Zero</div>
+                <div class="text-sm mt-3 leading-relaxed" style="color:var(--t2)">Visual navigation<br>zero-shot deployment</div>
+                <div class="mono text-[9px] mt-2" style="color:var(--t3)">Go2 → real cone search</div>
+            </div>
+            <div class="glass rounded-2xl p-7 text-center relative overflow-hidden lift">
+                <div class="metric-bar" style="background:linear-gradient(90deg,#f59e0b,#f43f5e)"></div>
+                <div class="mono font-black text-slate-900" style="font-size:2.6rem">90<span class="text-xl ml-1" style="color:#f59e0b">%</span></div>
+                <div class="text-sm mt-3 leading-relaxed" style="color:var(--t2)">Arm grasping<br>zero-shot success rate</div>
+                <div class="mono text-[9px] mt-2" style="color:var(--t3)">Airbot Play · no special setup</div>
+            </div>
+        </div>
+
+        <!-- APPLICATIONS Grid -->
+        <div id="applications" class="grid md:grid-cols-3 gap-6 mt-16 pt-16 sec">
+            <!-- Manipulation -->
+            <div class="glass rounded-2xl overflow-hidden app-card flex flex-col h-full" style="border-color:rgba(0,0,0,0.1)">
+                <div class="relative overflow-hidden h-48 shrink-0">
+                    <img src="reference/GS_Playground_RSS2026/Assets/Figures/images/boston_spot/ours_spot_after.jpg"
+                         alt="Manipulation" class="w-full h-full object-cover opacity-80">
+                    <div class="absolute inset-0" style="background:linear-gradient(to top,rgba(255,255,255,.9) 30%,transparent)"></div>
+                    <div class="absolute top-3 left-3 num-badge" style="background:var(--bg);color:var(--c1);border:1px solid var(--c1)">Experiment 01</div>
+                </div>
+                <div class="p-6 flex flex-col flex-1">
+                    <h3 class="font-bold text-slate-900 text-lg mb-2">Manipulation</h3>
+                    <p class="text-sm leading-relaxed mb-4 flex-1" style="color:var(--t2)">
+                        Block-grasping with Airbot Play arm. RGB + proprioception → 6-DOF joint actions.
+                        3DGS digital twin trained with domain randomization.
+                    </p>
+                    <div class="glass-dark rounded-lg p-3 mono text-xs mt-auto" style="color:var(--c4)">
+                        <i class="fas fa-check-circle mr-1.5"></i>90% zero-shot success rate
+                    </div>
+                </div>
+            </div>
+
+            <!-- Locomotion -->
+            <div class="glass rounded-2xl overflow-hidden app-card flex flex-col h-full" style="border-color:rgba(0,0,0,0.1)">
+                <div class="relative overflow-hidden h-48 shrink-0">
+                    <img src="reference/GS_Playground_RSS2026/Assets/Figures/images/newton_cradle/ours_post_impact.jpg"
+                         alt="Locomotion" class="w-full h-full object-cover opacity-80">
+                    <div class="absolute inset-0" style="background:linear-gradient(to top,rgba(255,255,255,.9) 30%,transparent)"></div>
+                    <div class="absolute top-3 left-3 num-badge" style="background:var(--bg);color:var(--c1);border:1px solid var(--c1)">Experiment 02</div>
+                </div>
+                <div class="p-6 flex flex-col flex-1">
+                    <h3 class="font-bold text-slate-900 text-lg mb-2">Locomotion</h3>
+                    <p class="text-sm leading-relaxed mb-4 flex-1" style="color:var(--t2)">
+                        Unitree Go2 quadruped (10 min, 1024 envs) and Unitree G1 humanoid (6 hr, 2048 envs).
+                        State-based policies trained in simulation and deployed directly on hardware.
+                    </p>
+                    <div class="glass-dark rounded-lg p-3 mono text-xs mt-auto" style="color:var(--c4)">
+                        <i class="fas fa-check-circle mr-1.5"></i>Direct sim-to-real deployment
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="glass rounded-2xl overflow-hidden app-card flex flex-col h-full" style="border-color:rgba(0,0,0,0.1)">
+                <div class="relative overflow-hidden h-48 shrink-0">
+                    <img src="reference/GS_Playground_RSS2026/Assets/Figures/images/store/store_mujoco.jpg"
+                         alt="Navigation" class="w-full h-full object-cover opacity-80">
+                    <div class="absolute inset-0" style="background:linear-gradient(to top,rgba(255,255,255,.9) 30%,transparent)"></div>
+                    <div class="absolute top-3 left-3 num-badge" style="background:var(--bg);color:var(--c1);border:1px solid var(--c1)">Experiment 03</div>
+                </div>
+                <div class="p-6 flex flex-col flex-1">
+                    <h3 class="font-bold text-slate-900 text-lg mb-2">Navigation</h3>
+                    <p class="text-sm leading-relaxed mb-4 flex-1" style="color:var(--t2)">
+                        Visual navigation with Unitree Go2—hierarchical RL with egocentric RGB input.
+                        Policy trained in GS-Playground deployed zero-shot on real robot.
+                    </p>
+                    <div class="glass-dark rounded-lg p-3 mono text-xs mt-auto" style="color:var(--c4)">
+                        <i class="fas fa-check-circle mr-1.5"></i>Zero-shot real-world navigation
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ════════════════════════════════
+     ACKNOWLEDGMENTS / ABSTRACT
+════════════════════════════════ -->
+<section id="abstract" class="py-24 sec bg-[rgba(35,136,255,0.015)]">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="text-center mb-10">
+            <p class="slabel mb-3" style="color:var(--c1);opacity:0.5">// Acknowledgments</p>
+            <h2 class="text-3xl sm:text-4xl font-bold text-slate-900">Joint Contributors</h2>
+        </div>
+
+        <div class="max-w-[768px] mx-auto flex flex-col items-stretch gap-[24px] px-[32px]">
+            <!-- Institution logos -->
+            <div class="flex flex-wrap justify-center items-center gap-0 w-full">
+                <img src="reference/logos/logo1.png" alt="Institution 1" width="108" height="30" class="block">
+                <img src="reference/logos/logo2.png" alt="Institution 2" width="108" height="30" class="block">
+                <img src="reference/logos/logo3.png" alt="Institution 3" width="108" height="30" class="block">
+                <img src="reference/logos/logo4.png" alt="Institution 4" width="108" height="30" class="block">
+                <img src="reference/logos/logo5.png" alt="Institution 5" width="108" height="30" class="block">
+            </div>
+
+            <!-- Authors text -->
+            <div class="flex flex-col items-stretch pt-[8px]">
+                <p class="text-center font-normal text-[14px] leading-[25.2px] text-[#7A93B8]" style="font-family: Inter, sans-serif;">
+                    A. Hernandez, B. Patel, C. Kim, D. Dubois, E. Ishikawa, F. Moreau, G. Kumar, H. Schmidt, I. Silva, J. Kowalski, K. Dubois, L. Moreau, M. Schmidt, N. Kowalski, O. Ishikawa, P. Hernandez, Q. Patel, R. Kim, S. Dubois, T. Ishikawa, U. Moreau, V. Kumar, W. Schmidt, X. Silva, Y. Kowalski, Z. Dubois, A. Moreau, B. Kumar, C. Schmidt, D. Silva, E. Kowalski, F. Dubois, G. Ishikawa, H. Hernandez, I. Patel, J. Kim, K. Schmidt, L. Silva, M. Kowalski, N. Dubois
+                </p>
+            </div>
+
+            <!-- Links -->
+            <div class="flex flex-wrap justify-center items-stretch gap-0 w-full max-w-[704px] mx-auto">
+                <a href="#" class="flex items-center gap-[10px] px-[12px] py-[6px] rounded-[4px] transition-colors hover:bg-[rgba(35,136,255,0.05)]" style="border: 1px solid rgba(35,136,255,0.1)">
+                    <div class="flex flex-col">
+                        <i class="fas fa-file-alt text-[12px] text-[#2388FF]"></i>
+                    </div>
+                    <span class="mono text-[11px] text-[#7A93B8] font-normal leading-[16.5px]">Paper</span>
+                </a>
+                <a href="#" class="flex items-center gap-[10px] px-[12px] py-[6px] rounded-[4px] transition-colors hover:bg-[rgba(35,136,255,0.05)]" style="border: 1px solid rgba(35,136,255,0.1)">
+                    <div class="flex flex-col">
+                        <i class="fab fa-github text-[12px] text-[#2388FF]"></i>
+                    </div>
+                    <span class="mono text-[11px] text-[#7A93B8] font-normal leading-[16.5px]">GitHub</span>
+                </a>
+                <a href="#" class="flex items-center gap-[10px] px-[12px] py-[6px] rounded-[4px] transition-colors hover:bg-[rgba(35,136,255,0.05)]" style="border: 1px solid rgba(35,136,255,0.1)">
+                    <div class="flex flex-col">
+                        <i class="fas fa-database text-[12px] text-[#2388FF]"></i>
+                    </div>
+                    <span class="mono text-[11px] text-[#7A93B8] font-normal leading-[16.5px]">Dataset (coming May)</span>
+                </a>
+                <a href="#" class="flex items-center gap-[10px] px-[12px] py-[6px] rounded-[4px] transition-colors hover:bg-[rgba(35,136,255,0.05)]" style="border: 1px solid rgba(35,136,255,0.1)">
+                    <div class="flex flex-col">
+                        <i class="fas fa-play text-[12px] text-[#2388FF]"></i>
+                    </div>
+                    <span class="mono text-[11px] text-[#7A93B8] font-normal leading-[16.5px]">Online Demo (coming May)</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ════════════════════════════════
+     OPEN SOURCE (compact)
+════════════════════════════════ -->
+<section id="opensource" class="py-16 sec bg-[rgba(35,136,255,0.015)]">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="glass rounded-2xl p-8 sm:p-10 relative overflow-hidden glow-c">
+            <div class="absolute top-0 left-0 right-0 h-[2px] rounded-t-2xl" style="background:linear-gradient(90deg,var(--c1),var(--c2),var(--c3))"></div>
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+                <div class="flex-1">
+                    <p class="slabel mb-2">open ecosystem</p>
+                    <h3 class="text-xl font-bold text-slate-900 mb-2">Full-Stack Open-Source Release</h3>
+                    <p class="text-sm leading-relaxed" style="color:var(--t2)">
+                        Physics engine, Batch-3DGS renderer, and Real2Sim pipeline will be publicly released.
+                        Accompanied by <strong class="text-slate-900">Bridge-GS</strong> and <strong class="text-slate-900">InteriorGS</strong> datasets.
+                        Launching <strong style="color:var(--c1)">no earlier than April 29, 2026</strong>.
+                    </p>
+                </div>
+                <div class="flex flex-col gap-2 shrink-0">
+                    <a href="#" class="lift inline-flex items-center px-7 py-3 text-sm font-bold rounded-xl text-black whitespace-nowrap" style="background:linear-gradient(120deg,var(--c1),var(--c2));box-shadow:0 0 20px rgba(35,136,255,0.25)">
+                        <i class="fab fa-github mr-2"></i>Follow Release
+                    </a>
+                    <div class="flex flex-wrap gap-1.5 justify-center">
+                        <span class="mono text-[9px] px-2 py-1 rounded glass" style="color:var(--t3)">Tsinghua AIR</span>
+                        <span class="mono text-[9px] px-2 py-1 rounded glass" style="color:var(--t3)">Dexmal</span>
+                        <span class="mono text-[9px] px-2 py-1 rounded glass" style="color:var(--t3)">D-Robotics</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ════════════════════════════════
+     FOOTER
+════════════════════════════════ -->
+<footer class="py-10 sec" style="background:var(--bg)">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-5">
+        <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-lg flex items-center justify-center font-black text-black text-xs" style="background:linear-gradient(135deg,var(--c1),var(--c2))">G</div>
+            <span class="mono font-bold tracking-widest" style="color:var(--t1)">GS-<span class="grad-c">PLAYGROUND</span></span>
+        </div>
+        <div class="flex flex-wrap justify-center gap-5 mono text-[11px]">
+            <a href="#" class="hover:text-slate-900 transition-colors" style="color:var(--t3)">Paper</a>
+            <a href="#" class="hover:text-slate-900 transition-colors" style="color:var(--t3)"><i class="fab fa-github mr-1"></i>GitHub</a>
+            <a href="#" class="hover:text-slate-900 transition-colors" style="color:var(--t3)">Dataset</a>
+            <a href="#" class="hover:text-slate-900 transition-colors" style="color:var(--t3)">Contact</a>
+        </div>
+        <div class="mono text-[10px]" style="color:var(--t3)">&copy; 2026 DISCOVER Lab &amp; Joint Collaborators · RSS 2026</div>
+    </div>
+</footer>
+
+
+<!-- ════════════════════════════════
+     SCRIPTS
+════════════════════════════════ -->
+<script>
+// ── Mobile menu ──
+document.getElementById('ham-btn').addEventListener('click', () => document.getElementById('mob-menu').classList.toggle('open'));
+document.querySelectorAll('#mob-menu a').forEach(a => a.addEventListener('click', () => document.getElementById('mob-menu').classList.remove('open')));
+
+// ── Nav shadow on scroll ──
+window.addEventListener('scroll', () => {
+    document.getElementById('main-nav').style.boxShadow = window.scrollY > 30 ? '0 4px 40px rgba(0,0,0,0.6)' : 'none';
+}, { passive: true });
+
+// ════════════════════════════════
+// 3D COORDINATE SPACE CANVAS
+// with Mouse Interactivity
+// ════════════════════════════════
+(function () {
+    const canvas  = document.getElementById('heroCanvas');
+    const heroSec = document.getElementById('home');
+    const coordHUD= document.getElementById('coord-hud');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    // ── State ──
+    let W = 0, H = 0;
+    let baseAngle   = 0.45;     // auto-rotating base
+    let currentRotY = 0.45;
+    let currentTilt = 0.40;
+    let targetRotY  = 0.45;
+    let targetTilt  = 0.40;
+    let isHover     = false;
+    let mouseNX     = 0;        // normalized -1..1
+    let mouseNY     = 0;
+    let burstParticles = [];    // click burst
+
+    // ── Gaussian splat clusters (representing 3DGS assets) ──
+    const SPLATS = [];
+    const CLUSTERS = [
+        { cx:-3.5, cy:0.7, cz:2,    n:22, sp:1.1, h:192 },
+        { cx:3.2,  cy:0,   cz:-1.8, n:18, sp:1.0, h:256 },
+        { cx:0.5,  cy:1.2, cz:0.5,  n:14, sp:0.7, h:178 },
+        { cx:-1.2, cy:-.3, cz:-3,   n:15, sp:0.85,h:218 },
+        { cx:2.8,  cy:0.5, cz:2.5,  n:11, sp:0.65,h:262 },
+        { cx:-2.5, cy:-.4, cz:0.5,  n:10, sp:0.6, h:168 },
+    ];
+    for (const c of CLUSTERS) {
+        for (let i = 0; i < c.n; i++) {
+            SPLATS.push({
+                x: c.cx + (Math.random()-.5)*c.sp*2,
+                y: c.cy + (Math.random()-.5)*c.sp,
+                z: c.cz + (Math.random()-.5)*c.sp*2,
+                r:   Math.random()*1.6+0.4,
+                ex:  Math.random()*.45+.78,
+                ey:  Math.random()*.38+.55,
+                rot: Math.random()*Math.PI,
+                op:  Math.random()*.32+.08,
+                hue: c.h + (Math.random()-.5)*32,
+                phase: Math.random()*Math.PI*2,
+            });
+        }
+    }
+
+    function resize() {
+        W = canvas.width  = canvas.offsetWidth  || window.innerWidth;
+        H = canvas.height = canvas.offsetHeight || 700;
+    }
+
+    // 3D → 2D projection
+    function project(x, y, z, rotY, tilt) {
+        const rx = x*Math.cos(rotY) + z*Math.sin(rotY);
+        const rz =-x*Math.sin(rotY) + z*Math.cos(rotY);
+        const ry = y*Math.cos(tilt) - rz*Math.sin(tilt);
+        const fz = y*Math.sin(tilt) + rz*Math.cos(tilt);
+        const FOV = 6.5;
+        const pz = fz + FOV;
+        const sc = pz > 0.1 ? FOV/pz : 0;
+        const U  = Math.min(W, H) * 0.074;
+        return { x: rx*sc*U + W*.5, y: ry*sc*U + H*.30, s: sc, fz };
+    }
+
+    // Inverse projection (screen → approximate 3D, on floor plane y=GY)
+    function unproject(sx, sy, rotY, tilt, GY) {
+        const U = Math.min(W, H) * 0.074;
+        const FOV = 6.5;
+        // Simplified: solve for 3D point on GY floor plane
+        const ndx = (sx - W*.5) / U;
+        const ndy = (sy - H*.30) / U;
+        // Just display as arbitrary coordinates
+        const wx = (ndx * 1.5 - Math.sin(rotY)*2).toFixed(2);
+        const wz = (-ndy * 1.5).toFixed(2);
+        return { x: wx, y: GY.toFixed(1), z: wz };
+    }
+
+    function drawArrow(x1,y1,x2,y2,col) {
+        const dx=x2-x1, dy=y2-y1, len=Math.hypot(dx,dy);
+        if (len<2) return;
+        const ux=dx/len, uy=dy/len, S=10;
+        ctx.strokeStyle=col; ctx.lineWidth=1.7;
+        ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+        ctx.fillStyle=col;
+        ctx.beginPath();
+        ctx.moveTo(x2,y2);
+        ctx.lineTo(x2-ux*S+uy*S*.4, y2-uy*S-ux*S*.4);
+        ctx.lineTo(x2-ux*S-uy*S*.4, y2-uy*S+ux*S*.4);
+        ctx.closePath(); ctx.fill();
+    }
+
+    // ── 2D Screen-space perspective floor grid ──
+    function drawPerspFloor(vpX, vpY) {
+        const bot    = H + 400;          // extend well beyond canvas bottom for longer rays
+        const spread = W * 2.2;          // wider spread for more dramatic fan
+        const N = 18;                    // radial line count
+
+        // Radial lines only — no cross-lines
+        for (let i = 0; i <= N; i++) {
+            const bx    = (vpX - spread/2) + (spread / N) * i;
+            const isMid = (i === Math.round(N/2));
+            const isMaj = (i % 4 === 0);
+            const alpha = isMid ? 0.55 : isMaj ? 0.28 : 0.13;
+            const lw    = isMid ? 1.4  : isMaj ? 0.9  : 0.5;
+
+            // Gradient stroke: bright near VP, fade toward bottom
+            const grad = ctx.createLinearGradient(vpX, vpY, bx, bot);
+            grad.addColorStop(0,   `rgba(0,220,255,${alpha})`);
+            grad.addColorStop(0.4, `rgba(0,205,255,${alpha * 0.6})`);
+            grad.addColorStop(1,   `rgba(0,180,255,0)`);
+
+            ctx.strokeStyle = grad;
+            ctx.lineWidth   = lw;
+            ctx.beginPath();
+            ctx.moveTo(vpX, vpY);
+            ctx.lineTo(bx, bot);
+            ctx.stroke();
+        }
+
+        // Horizon glow dot at vanishing point
+        const hGrad = ctx.createRadialGradient(vpX, vpY, 0, vpX, vpY, 60);
+        hGrad.addColorStop(0,   'rgba(0,220,255,0.18)');
+        hGrad.addColorStop(1,   'rgba(0,200,255,0)');
+        ctx.fillStyle = hGrad;
+        ctx.beginPath(); ctx.arc(vpX, vpY, 60, 0, Math.PI*2); ctx.fill();
+    }
+
+    function draw(t, rotY, tilt) {
+        ctx.clearRect(0, 0, W, H);
+        const U = Math.min(W, H) * 0.074;
+
+        // ── Perspective floor grid (screen-space, matches horizon at H*0.30) ──
+        const vpX = W * 0.5;
+        const vpY = H * 0.30;
+        drawPerspFloor(vpX, vpY);
+
+        // ── Splats — floated above the floor plane (GY=0) ──
+        const GY = 0;
+        const drawn = SPLATS.map(s => {
+            const fy = s.y + Math.sin(t*.65+s.phase)*.18;
+            const p  = project(s.x, fy, s.z, rotY, tilt);
+            return { ...s, px:p.x, py:p.y, ps:p.s, pz:p.fz };
+        }).filter(s=>s.ps>0).sort((a,b)=>a.pz-b.pz);
+
+        for (const s of drawn) {
+            const size = s.r * s.ps * U * 0.092;
+            ctx.save();
+            ctx.globalAlpha = s.op * Math.min(1, s.ps*1.9);
+            ctx.translate(s.px, s.py);
+            ctx.rotate(s.rot);
+            ctx.scale(s.ex, s.ey);
+            const G = ctx.createRadialGradient(0,0,0,0,0,size*5);
+            G.addColorStop(0,   `hsla(${s.hue},95%,72%,.95)`);
+            G.addColorStop(.4,  `hsla(${s.hue},95%,62%,.42)`);
+            G.addColorStop(1,   `hsla(${s.hue},95%,55%,0)`);
+            ctx.fillStyle=G;
+            ctx.beginPath(); ctx.ellipse(0,0,size*5,size*5,0,0,Math.PI*2); ctx.fill();
+            ctx.restore();
+        }
+
+        // ── Coordinate Axes — origin at floor level (GY=0), aligned with VP ──
+        const O  = project(0,    GY,   0,   rotY, tilt);
+        const AX = project(4.5,  GY,   0,   rotY, tilt);
+        const AY = project(0,    GY+3, 0,   rotY, tilt);   // Y goes straight up
+        const AZ = project(0,    GY,   4.5, rotY, tilt);
+
+        drawArrow(O.x,O.y, AX.x,AX.y, 'rgba(255,75,95,.88)');
+        drawArrow(O.x,O.y, AY.x,AY.y, 'rgba(50,220,90,.88)');
+        drawArrow(O.x,O.y, AZ.x,AZ.y, 'rgba(50,180,255,.88)');
+
+        const FS = Math.max(11, Math.min(W,H)*.018);
+        ctx.font = `700 ${FS}px 'JetBrains Mono',monospace`;
+        ctx.fillStyle='rgba(255,85,105,.92)'; ctx.fillText('X', AX.x+8, AX.y+5);
+        ctx.fillStyle='rgba(55,225,95,.92)';  ctx.fillText('Y', AY.x+2, AY.y-8);
+        ctx.fillStyle='rgba(55,185,255,.92)'; ctx.fillText('Z', AZ.x+8, AZ.y+5);
+
+        // Origin dot at vanishing point
+        ctx.fillStyle='rgba(0,200,255,.65)';
+        ctx.beginPath(); ctx.arc(O.x, O.y, 2.5, 0, Math.PI*2); ctx.fill();
+
+        // ── Burst particles (click effect) ──
+        burstParticles = burstParticles.filter(p=>p.life>0);
+        for (const p of burstParticles) {
+            ctx.save();
+            ctx.globalAlpha = p.life * 0.85;
+            const G2 = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*5);
+            G2.addColorStop(0,`hsla(${p.hue},100%,72%,1)`);
+            G2.addColorStop(1,`hsla(${p.hue},100%,60%,0)`);
+            ctx.fillStyle=G2;
+            ctx.beginPath(); ctx.arc(p.x,p.y,p.r*5,0,Math.PI*2); ctx.fill();
+            ctx.restore();
+            p.x  += p.vx; p.y += p.vy;
+            p.vx *= 0.92;  p.vy *= 0.92;
+            p.life -= 0.028;
+        }
+    }
+
+    // ── Mouse events on hero section ──
+    heroSec.addEventListener('mousemove', (e) => {
+        const rect = heroSec.getBoundingClientRect();
+        mouseNX = ((e.clientX - rect.left) / rect.width  - 0.5) * 2;
+        mouseNY = ((e.clientY - rect.top)  / rect.height - 0.5) * 2;
+        isHover = true;
+
+        // Update HUD
+        const wx = (mouseNX * 5).toFixed(2);
+        const wy = ((rect.height * 0.30 - (e.clientY - rect.top)) / (rect.height * 0.18) * 1.2).toFixed(2);
+        const wz = (-mouseNY * 3).toFixed(2);
+        coordHUD.style.left = (e.clientX + 18) + 'px';
+        coordHUD.style.top  = (e.clientY - rect.top + 8) + 'px';
+        coordHUD.textContent = `x:${wx}  y:${wy}  z:${wz}`;
+    }, { passive: true });
+
+    heroSec.addEventListener('mouseleave', () => {
+        isHover = false;
+        mouseNX = 0; mouseNY = 0;
+    });
+
+    // Click: spawn burst of Gaussian particles
+    heroSec.addEventListener('click', (e) => {
+        const rect = heroSec.getBoundingClientRect();
+        const cx = e.clientX - rect.left;
+        const cy = e.clientY - rect.top;
+        for (let i = 0; i < 18; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = Math.random() * 6 + 2;
+            burstParticles.push({
+                x: cx, y: cy,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                r:  Math.random() * 3 + 1,
+                life: 1.0,
+                hue: Math.random() > 0.5 ? 194 : (Math.random() > 0.5 ? 262 : 170),
+            });
+        }
+    });
+
+    // ── Animation loop ──
+    function animate(ts) {
+        const t = ts / 1000;
+
+        // Auto-rotate unless mouse is hovering
+        if (!isHover) {
+            baseAngle += 0.0022;
+        }
+
+        // Target angles: mouse deflects the view
+        targetRotY = baseAngle + mouseNX * 0.75;
+        targetTilt = 0.40 + mouseNY * 0.22;
+
+        // Smooth lerp
+        currentRotY += (targetRotY - currentRotY) * 0.055;
+        currentTilt  += (targetTilt  - currentTilt)  * 0.055;
+
+        draw(t, currentRotY, currentTilt);
+        requestAnimationFrame(animate);
+    }
+
+    window.addEventListener('resize', () => { resize(); }, { passive: true });
+    resize();
+    requestAnimationFrame(animate);
+})();
+
+// ════════════════════════════════
+// SIDE-GUTTER AMBIENT BLOBS — document-space, scroll-aware
+// 5 blobs spread across content below banner, sides only
+// ════════════════════════════════
+(function () {
+    const bgCanvas = document.getElementById('bgCanvas');
+    if (!bgCanvas) return;
+    const bgCtx = bgCanvas.getContext('2d');
+
+    let BW = 0, BH = 0;
+
+    function bgResize() {
+        BW = bgCanvas.width  = window.innerWidth;
+        BH = bgCanvas.height = window.innerHeight;
+    }
+
+    const PALETTE = [
+        { h: 280, s: 88, l: 62 },   // violet
+        { h: 32,  s: 95, l: 62 },   // amber
+        { h: 330, s: 88, l: 64 },   // pink
+        { h: 158, s: 80, l: 56 },   // mint
+        { h: 48,  s: 90, l: 62 },   // gold
+    ];
+
+    // Blobs live in document space; sinusoidal drift gives perpetual easing
+    const BLOBS = [];
+
+    function initBlobs() {
+        const docH   = document.body.scrollHeight;
+        const bannerH = window.innerHeight;          // skip the hero/banner
+        const span    = docH - bannerH - 200;        // usable content height
+
+        BLOBS.length = 0;
+        for (let i = 0; i < 5; i++) {
+            const col    = PALETTE[i];
+            const onLeft = i % 2 === 0;
+            // x centre within side gutter
+            const xBase  = onLeft
+                ? 0.04 + Math.random() * 0.12
+                : 0.84 + Math.random() * 0.12;
+            // evenly distribute down the content, with a small random offset
+            const docYBase = bannerH + 200 + (span / 5) * i + (Math.random() - 0.5) * (span / 6);
+
+            BLOBS.push({
+                xBase,
+                docYBase,
+                xAmp:   0.025 + Math.random() * 0.02,   // horizontal oscillation range
+                yAmp:   60    + Math.random() * 80,      // vertical oscillation ±px
+                xFreq:  0.03  + Math.random() * 0.04,
+                yFreq:  0.04  + Math.random() * 0.05,
+                xPhase: Math.random() * Math.PI * 2,
+                yPhase: Math.random() * Math.PI * 2,
+                r:      0.11  + Math.random() * 0.13,    // radius as fraction of minDim
+                op:     0.28  + Math.random() * 0.16,
+                hue:    col.h + (Math.random() - 0.5) * 20,
+                sat:    col.s,
+                lit:    col.l,
+                pulseFq: 0.14 + Math.random() * 0.22,
+                pulsePhase: Math.random() * Math.PI * 2,
+            });
+        }
+    }
+
+    // Wait for layout to settle before reading scrollHeight
+    setTimeout(initBlobs, 120);
+    window.addEventListener('resize', () => { bgResize(); initBlobs(); }, { passive: true });
+
+    function bgDraw(ts) {
+        const t       = ts / 1000;
+        const scrollY = window.scrollY || 0;
+        bgCtx.clearRect(0, 0, BW, BH);
+
+        if (!BLOBS.length) { requestAnimationFrame(bgDraw); return; }
+
+        const minDim = Math.min(BW, BH);
+
+        for (const b of BLOBS) {
+            // Sinusoidal easing — smooth, perpetual, no drift
+            const curX    = b.xBase    + Math.sin(t * b.xFreq + b.xPhase) * b.xAmp;
+            const curDocY = b.docYBase + Math.sin(t * b.yFreq + b.yPhase) * b.yAmp;
+
+            // Convert document Y → viewport Y
+            const viewY = curDocY - scrollY;
+            const sr    = b.r * minDim;
+
+            // Skip if fully outside the viewport
+            if (viewY + sr < 0 || viewY - sr > BH) continue;
+
+            const pulse = 1 + 0.28 * Math.sin(t * b.pulseFq + b.pulsePhase);
+            const alpha = b.op * pulse;
+            const sx    = curX * BW;
+
+            const G = bgCtx.createRadialGradient(sx, viewY, 0, sx, viewY, sr);
+            G.addColorStop(0,    `hsla(${b.hue},${b.sat}%,${b.lit}%,${alpha.toFixed(3)})`);
+            G.addColorStop(0.45, `hsla(${b.hue},${b.sat}%,${b.lit - 8}%,${(alpha * 0.35).toFixed(3)})`);
+            G.addColorStop(1,    `hsla(${b.hue},${b.sat}%,${b.lit}%,0)`);
+            bgCtx.fillStyle = G;
+            bgCtx.beginPath();
+            bgCtx.arc(sx, viewY, sr, 0, Math.PI * 2);
+            bgCtx.fill();
+        }
+
+        requestAnimationFrame(bgDraw);
+    }
+
+    bgResize();
+    requestAnimationFrame(bgDraw);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dexbotic · 开源 VLA 工具箱 | DexDav</title>
+  <meta name="description" content="Dexbotic — 基于 PyTorch 的开源 VLA 工具箱，支持 5 种前沿策略，LIBERO 成功率 95%，30 分钟跑通训练。">
+  <link rel="stylesheet" href="../assets/shared.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>tailwind.config={theme:{extend:{fontFamily:{'mono':['JetBrains Mono','monospace'],'sans':['DM Sans','sans-serif'],'head':['Space Grotesk','sans-serif']}}}}</script>
+  <style>
+    :root{--bg:#020817;--surface:#0d1117;--card:#0f172a;}
+    *{box-sizing:border-box;} html{background:var(--bg);}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:#f1f5f9;overflow-x:hidden;}
+    .dot-grid{background-image:radial-gradient(circle,rgba(255,255,255,0.05) 1px,transparent 1px);background-size:32px 32px;}
+    .gradient-text{background:linear-gradient(135deg,#4ade80 0%,#22d3ee 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .gradient-text-blue{background:linear-gradient(135deg,#60a5fa 0%,#a78bfa 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .glass-card{background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);transition:border-color 0.2s,box-shadow 0.2s;}
+    .glass-card:hover{border-color:rgba(74,222,128,0.25);}
+    
+    .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:500;border:1px solid rgba(74,222,128,0.4);background:rgba(74,222,128,0.1);color:#86efac;}
+    .badge-blue{border-color:rgba(59,130,246,0.4);background:rgba(59,130,246,0.1);color:#93c5fd;}
+    .badge-amber{border-color:rgba(251,191,36,0.4);background:rgba(251,191,36,0.1);color:#fde68a;}
+    .btn-primary{display:inline-flex;align-items:center;gap:8px;padding:11px 24px;border-radius:8px;font-weight:600;font-size:15px;background:#22c55e;color:#fff;cursor:pointer;transition:all 0.2s;text-decoration:none;}
+    .btn-primary:hover{background:#16a34a;transform:translateY(-1px);box-shadow:0 8px 25px rgba(34,197,94,0.3);}
+    .btn-secondary{display:inline-flex;align-items:center;gap:8px;padding:11px 24px;border-radius:8px;font-weight:600;font-size:15px;background:transparent;color:#f1f5f9;cursor:pointer;border:1px solid rgba(255,255,255,0.2);transition:all 0.2s;text-decoration:none;}
+    .btn-secondary:hover{border-color:rgba(255,255,255,0.4);background:rgba(255,255,255,0.05);}
+    .section-label{font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#475569;}
+    .glow-line{height:1px;background:linear-gradient(90deg,transparent,rgba(74,222,128,0.4),rgba(34,211,238,0.4),transparent);}
+    .code-block{background:#0d1117;border:1px solid rgba(255,255,255,0.08);border-radius:10px;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.7;overflow:auto;padding:20px 24px;}
+    .kw{color:#ff7b72;} .fn{color:#79c0ff;} .str{color:#a5d6ff;} .cm{color:#8b949e;} .nm{color:#ffa657;} .ok{color:#4ade80;} .key{color:#fca5a5;}
+    
+    
+    .copy-btn{position:absolute;top:10px;right:10px;padding:4px 10px;border-radius:5px;font-size:11px;font-family:'JetBrains Mono',monospace;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#64748b;cursor:pointer;transition:all 0.2s;}
+    .copy-btn:hover{background:rgba(255,255,255,0.1);color:#94a3b8;}
+    .copy-btn.copied{color:#4ade80;border-color:rgba(74,222,128,0.4);}
+    .reveal{opacity:0;transform:translateY(24px);transition:opacity 0.7s ease,transform 0.7s ease;}
+    .reveal.visible{opacity:1;transform:translateY(0);}
+    .reveal-delay-1{transition-delay:0.1s;} .reveal-delay-2{transition-delay:0.2s;} .reveal-delay-3{transition-delay:0.3s;}
+    .tab-btn{padding:7px 16px;border-radius:6px;font-size:13px;font-weight:500;font-family:'JetBrains Mono',monospace;cursor:pointer;border:none;transition:all 0.15s;color:#64748b;background:transparent;}
+    .tab-btn.active{background:rgba(74,222,128,0.12);color:#86efac;}
+    .tab-btn:hover:not(.active){color:#94a3b8;}
+    .tab-panel{display:none;} .tab-panel.active{display:block;}
+    ::-webkit-scrollbar{width:6px;} ::-webkit-scrollbar-track{background:var(--bg);} ::-webkit-scrollbar-thumb{background:#1e293b;border-radius:3px;}
+  </style>
+</head>
+<body>
+<div id="scroll-progress"></div>
+
+<!-- NAV -->
+<div class="nav-pill-wrap">
+  <nav class="nav-pill" id="main-nav">
+    <a href="../index.html" class="nav-logo">
+      <div class="nav-logo-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5.64 5.64l2.12 2.12M16.24 16.24l2.12 2.12M5.64 18.36l2.12-2.12M16.24 7.76l2.12-2.12"/></svg>
+      </div>
+      <span class="nav-logo-name">DexDav</span>
+    </a>
+    <div class="nav-links">
+      <a href="dm0.html" class="nav-link-pill">DM0</a>
+      <a href="dexbotic.html" class="nav-link-pill active">Dexbotic</a>
+      <a href="dos-w1.html" class="nav-link-pill">DOS-W1</a>
+      <a href="research.html" class="nav-link-pill">科研高校</a>
+      <a href="vocational.html" class="nav-link-pill">职业教育</a>
+    </div>
+    <div class="nav-actions">
+      <a href="https://github.com/dexmal/dexbotic" target="_blank" class="btn btn-ghost btn-sm" aria-label="GitHub">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+        GitHub
+      </a>
+      <a href="dexbotic.html#quickstart" class="btn btn-glow btn-sm">快速开始</a>
+      <button class="nav-hamburger" id="hamburger" aria-label="菜单"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+</div>
+<div class="nav-mobile-menu" id="mobile-menu">
+  <a href="dm0.html"        class="nav-mobile-link">DM0 模型</a>
+  <a href="dexbotic.html"   class="nav-mobile-link">Dexbotic 框架</a>
+  <a href="dos-w1.html"     class="nav-mobile-link">DOS-W1 硬件</a>
+  <div class="nav-mobile-divider"></div>
+  <a href="research.html"   class="nav-mobile-link">科研高校方案</a>
+  <a href="vocational.html" class="nav-mobile-link">职业教育方案</a>
+  <div class="nav-mobile-divider"></div>
+  <a href="https://github.com/dexmal/dexbotic" target="_blank" class="nav-mobile-link">GitHub →</a>
+  <a href="dexbotic.html#quickstart" class="btn btn-blue btn-md" style="text-align:center;margin-top:4px;border-radius:10px;">快速开始</a>
+</div>
+
+<!-- HERO -->
+<section class="relative min-h-screen flex items-center dot-grid pt-24 overflow-hidden">
+  <div style="position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 30% 30%,rgba(74,222,128,0.08) 0%,transparent 60%),radial-gradient(ellipse 50% 50% at 70% 70%,rgba(34,211,238,0.07) 0%,transparent 60%);pointer-events:none;"></div>
+
+  <div class="max-w-7xl mx-auto px-6 py-24 w-full relative z-10">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <!-- Left copy -->
+      <div class="reveal">
+        <div class="flex items-center gap-3 mb-6 flex-wrap">
+          <span class="badge">
+            <span style="width:6px;height:6px;background:#4ade80;border-radius:50%;animation:pulse 2s infinite;"></span>
+            开源 VLA 工具箱 · MIT License · v2.0
+          </span>
+        </div>
+
+        <h1 style="font-size:4.5rem;font-weight:900;letter-spacing:-0.04em;line-height:1;margin-bottom:8px;color:#f1f5f9;">Dexbotic</h1>
+        <div style="font-size:1.4rem;font-weight:600;margin-bottom:20px;" class="g-blue">The Open-Source VLA Toolkit<br>for Real-World Robotics</div>
+
+        <p style="font-size:17px;color:#94a3b8;line-height:1.75;max-width:520px;margin-bottom:36px;">
+          基于 PyTorch 构建，从数据格式统一、模型训练到真机评测，一站式解决 VLA 开发全链路问题——让你专注研究，而不是基础设施。
+        </p>
+
+        <div class="flex items-center gap-4 flex-wrap mb-10">
+          <a href="#quickstart" class="btn btn-blue">
+            30 分钟跑通训练
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <a href="https://github.com/dexmal/dexbotic" target="_blank" class="btn btn-ghost">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+            GitHub 仓库
+          </a>
+        </div>
+
+        <div class="flex items-center gap-3 flex-wrap" style="font-size:13px;color:#475569;">
+          <span class="flex items-center gap-1.5"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>已服务 1000+ 开发者</span>
+          <span>·</span><span>数十家高校/企业</span>
+          <span>·</span><span>全球首个开源真机评测闭环</span>
+        </div>
+      </div>
+
+      <!-- Right: Code terminal -->
+      <div class="reveal reveal-delay-2">
+        <div style="background:#0d1117;border:1px solid rgba(74,222,128,0.2);border-radius:12px;box-shadow:0 0 40px rgba(74,222,128,0.08);">
+          <div style="background:#161b22;border-bottom:1px solid rgba(255,255,255,0.06);border-radius:12px 12px 0 0;padding:10px 16px;display:flex;align-items:center;gap:8px;">
+            <span style="width:12px;height:12px;border-radius:50%;background:#ff5f56;"></span>
+            <span style="width:12px;height:12px;border-radius:50%;background:#ffbd2e;"></span>
+            <span style="width:12px;height:12px;border-radius:50%;background:#27c93f;"></span>
+            <span style="margin-left:8px;font-size:12px;color:#475569;font-family:'JetBrains Mono',monospace;">dexbotic — train — 80×24</span>
+          </div>
+          <div class="code-block" style="border:none;border-radius:0 0 12px 12px;font-size:13px;">
+<span class="cm"># Three differentiators of Dexbotic:</span>
+<span class="cm"># 1. DM0 pretrained base → best starting point</span>
+<span class="cm"># 2. Dexdata format → lowest data onboarding cost</span>
+<span class="cm"># 3. RC evaluation → sim-to-real closed loop</span>
+
+<span class="fn">from</span> dexbotic <span class="fn">import</span> Trainer, DexdataDataset
+<span class="fn">from</span> dexbotic.models <span class="fn">import</span> DM0
+
+<span class="cm"># Load DM0 pretrained weights</span>
+model = DM0.from_pretrained(<span class="str">"Dexmal/DM0-libero"</span>)
+
+<span class="cm"># Load your dataset (Dexdata format)</span>
+dataset = DexdataDataset(<span class="str">"path/to/your/data"</span>)
+
+<span class="cm"># Train with one script</span>
+trainer = Trainer(model=model, dataset=dataset)
+trainer.train(steps=<span class="nm">80_000</span>)
+
+<span class="cm"># Results</span>
+<span class="ok">✓ LIBERO success rate: 95%</span>
+<span class="ok">✓ RoboChallenge: #1 globally</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="position:absolute;bottom:0;left:0;right:0;height:100px;background:linear-gradient(transparent,var(--bg));pointer-events:none;"></div>
+</section>
+
+<!-- STATS -->
+<section>
+  <div class="glow-line"></div>
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-white/5">
+      <div class="py-8 px-6 text-center reveal">
+        <div style="font-size:42px;font-weight:900;color:#4ade80;letter-spacing:-0.02em;">5</div>
+        <div class="t-label mt-2">前沿 VLA 策略</div>
+      </div>
+      <div class="py-8 px-6 text-center reveal reveal-delay-1">
+        <div style="font-size:42px;font-weight:900;color:#4ade80;letter-spacing:-0.02em;">10+</div>
+        <div class="t-label mt-2">支持机器人型号</div>
+      </div>
+      <div class="py-8 px-6 text-center reveal reveal-delay-2">
+        <div style="font-size:42px;font-weight:900;color:#fbbf24;letter-spacing:-0.02em;" data-count="95" data-suffix="%">0%</div>
+        <div class="t-label mt-2">LIBERO 成功率</div>
+      </div>
+      <div class="py-8 px-6 text-center reveal reveal-delay-3">
+        <div style="font-size:42px;font-weight:900;color:#fbbf24;letter-spacing:-0.02em;">#1</div>
+        <div class="t-label mt-2">RoboChallenge 全球</div>
+      </div>
+    </div>
+  </div>
+  <div class="glow-line"></div>
+</section>
+
+<!-- WHY DEXBOTIC -->
+<section class="py-24" style="background:rgba(255,255,255,0.01);">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-12 items-center">
+      <!-- Pain points -->
+      <div class="lg:col-span-2 reveal">
+        <div class="t-label mb-4">COMMON PAIN POINTS</div>
+        <div class="space-y-4">
+          <div class="flex items-start gap-3 p-4 rounded-xl" style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" style="margin-top:2px;flex-shrink:0;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <div>
+              <div style="font-weight:700;font-size:14px;color:#fca5a5;">环境配置太复杂</div>
+              <div style="font-size:13px;color:#64748b;margin-top:4px;line-height:1.6;">每个框架都有自己的依赖，版本冲突，光配环境就要花一天。</div>
+            </div>
+          </div>
+          <div class="flex items-start gap-3 p-4 rounded-xl" style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" style="margin-top:2px;flex-shrink:0;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <div>
+              <div style="font-weight:700;font-size:14px;color:#fca5a5;">数据格式千差万别</div>
+              <div style="font-size:13px;color:#64748b;margin-top:4px;line-height:1.6;">UR5、Franka、ALOHA 格式互不兼容，转换脚本要自己写。</div>
+            </div>
+          </div>
+          <div class="flex items-start gap-3 p-4 rounded-xl" style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" style="margin-top:2px;flex-shrink:0;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <div>
+              <div style="font-weight:700;font-size:14px;color:#fca5a5;">预训练基座已过时</div>
+              <div style="font-size:13px;color:#64748b;margin-top:4px;line-height:1.6;">很多框架用 2023 年老基座，性能有明显天花板。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center arrow -->
+      <div class="lg:col-span-1 flex items-center justify-center reveal reveal-delay-1">
+        <div style="text-align:center;">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="1.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          <div style="font-size:11px;color:#334155;margin-top:4px;font-family:'JetBrains Mono',monospace;">Dexbotic</div>
+        </div>
+      </div>
+
+      <!-- Solutions -->
+      <div class="lg:col-span-2 reveal reveal-delay-2">
+        <div class="t-label mb-4">DEXBOTIC SOLVES IT</div>
+        <div class="space-y-4">
+          <div class="flex items-start gap-3 p-4 rounded-xl" style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.15);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" style="margin-top:2px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>
+            <div>
+              <div style="font-weight:700;font-size:14px;color:#86efac;">Docker 一键部署，5 分钟启动</div>
+              <div style="font-size:13px;color:#64748b;margin-top:4px;line-height:1.6;">一条 <code style="color:#4ade80;font-size:12px;">docker run</code> 命令，环境自动配置完毕，开始工作。</div>
+            </div>
+          </div>
+          <div class="flex items-start gap-3 p-4 rounded-xl" style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.15);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" style="margin-top:2px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>
+            <div>
+              <div style="font-weight:700;font-size:14px;color:#86efac;">Dexdata 统一数据格式</div>
+              <div style="font-size:13px;color:#64748b;margin-top:4px;line-height:1.6;">Video + JSONL 标准格式，内置 10+ 数据集转换脚本，3 步接入。</div>
+            </div>
+          </div>
+          <div class="flex items-start gap-3 p-4 rounded-xl" style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.15);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" style="margin-top:2px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>
+            <div>
+              <div style="font-weight:700;font-size:14px;color:#86efac;">DM0 基座：LIBERO 成功率 95%</div>
+              <div style="font-size:13px;color:#64748b;margin-top:4px;line-height:1.6;">最新 DM0 预训练权重作为起点，RC 真机评测全球排名第一。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5 CORE CAPABILITIES -->
+<section class="py-24" style="background:var(--bg);">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="text-center mb-14 reveal">
+      <div class="t-label mb-3">CORE CAPABILITIES</div>
+      <h2 style="font-size:2.4rem;font-weight:900;letter-spacing:-0.03em;">五大<span class="g-blue">核心能力</span></h2>
+      <p style="color:#94a3b8;font-size:16px;margin-top:8px;">覆盖 VLA 开发从数据到评测的完整链路</p>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <!-- Cap 1 -->
+      <div class="card glass-card rounded-2xl p-6 reveal cursor-default">
+        <div style="width:40px;height:40px;background:rgba(59,130,246,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.8"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+        <h3 style="font-weight:800;font-size:16px;margin-bottom:8px;">统一模块化架构</h3>
+        <p style="font-size:13px;color:#64748b;line-height:1.7;margin-bottom:14px;">视觉编码器、LLM 骨干、动作专家三层完全解耦。改一层不影响其他层，专注验证你的创新点。</p>
+        <div class="flex flex-wrap gap-1.5">
+          <span style="padding:2px 8px;background:rgba(59,130,246,0.1);border-radius:4px;font-size:11px;color:#93c5fd;font-family:'JetBrains Mono',monospace;">CLIP-ViT</span>
+          <span style="padding:2px 8px;background:rgba(59,130,246,0.1);border-radius:4px;font-size:11px;color:#93c5fd;font-family:'JetBrains Mono',monospace;">DINOv2</span>
+          <span style="padding:2px 8px;background:rgba(59,130,246,0.1);border-radius:4px;font-size:11px;color:#93c5fd;font-family:'JetBrains Mono',monospace;">Qwen2.5-VL</span>
+        </div>
+      </div>
+      <!-- Cap 2 -->
+      <div class="card glass-card rounded-2xl p-6 reveal reveal-delay-1 cursor-default">
+        <div style="width:40px;height:40px;background:rgba(251,191,36,0.12);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="1.8"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
+        <h3 style="font-weight:800;font-size:16px;margin-bottom:8px;">强大预训练基座</h3>
+        <p style="font-size:13px;color:#64748b;line-height:1.7;margin-bottom:14px;">内置 DM0 预训练权重（2.4B 参数），LIBERO 成功率 95%，RC 全球第一。更好的起点 = 更少的数据 = 更快达到目标成功率。</p>
+        <div class="flex gap-2">
+          <span class="badge badge-amber" style="font-size:11px;">SOTA</span>
+          <span class="badge badge-amber" style="font-size:11px;">2.4B</span>
+        </div>
+      </div>
+      <!-- Cap 3 -->
+      <div class="card glass-card rounded-2xl p-6 reveal reveal-delay-2 cursor-default">
+        <div style="width:40px;height:40px;background:rgba(99,102,241,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="1.8"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        </div>
+        <h3 style="font-weight:800;font-size:16px;margin-bottom:8px;">Dexdata 统一数据格式</h3>
+        <p style="font-size:13px;color:#64748b;line-height:1.7;margin-bottom:14px;">Video + JSONL，内置 10+ 数据集转换脚本。自定义数据 3 步接入，无需重新标注。</p>
+        <div class="flex flex-wrap gap-1.5">
+          <span style="padding:2px 8px;background:rgba(99,102,241,0.1);border-radius:4px;font-size:11px;color:#a5b4fc;font-family:'JetBrains Mono',monospace;">LIBERO</span>
+          <span style="padding:2px 8px;background:rgba(99,102,241,0.1);border-radius:4px;font-size:11px;color:#a5b4fc;font-family:'JetBrains Mono',monospace;">CALVIN</span>
+          <span style="padding:2px 8px;background:rgba(99,102,241,0.1);border-radius:4px;font-size:11px;color:#a5b4fc;font-family:'JetBrains Mono',monospace;">RoboTwin</span>
+        </div>
+      </div>
+      <!-- Cap 4 -->
+      <div class="card glass-card rounded-2xl p-6 reveal cursor-default">
+        <div style="width:40px;height:40px;background:rgba(139,92,246,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.8"><rect x="2" y="3" width="7" height="7" rx="1"/><rect x="15" y="3" width="7" height="7" rx="1"/><rect x="2" y="14" width="7" height="7" rx="1"/><path d="M18 14l-6 6M12 14l6 6"/></svg>
+        </div>
+        <h3 style="font-weight:800;font-size:16px;margin-bottom:8px;">10+ 机型全硬件覆盖</h3>
+        <p style="font-size:13px;color:#64748b;line-height:1.7;margin-bottom:14px;">RTX 4090 到云端 H100 任意选。UR · Franka · ALOHA · DOS-W1 等 10+ 机型，消费级 4090 即可推理。</p>
+        <div class="flex gap-2">
+          <span class="badge" style="border-color:rgba(139,92,246,0.4);background:rgba(139,92,246,0.1);color:#c4b5fd;font-size:11px;">RTX 4090 推理</span>
+        </div>
+      </div>
+      <!-- Cap 5 -->
+      <div class="card glass-card rounded-2xl p-6 reveal reveal-delay-1 cursor-default">
+        <div style="width:40px;height:40px;background:rgba(74,222,128,0.12);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        </div>
+        <h3 style="font-weight:800;font-size:16px;margin-bottom:8px;">一个 Exp 脚本，全部搞定</h3>
+        <p style="font-size:13px;color:#64748b;line-height:1.7;margin-bottom:14px;">复制 libero_dm0 模板脚本，修改 dataset_name / model_name_or_path / num_train_steps 即可启动新实验。</p>
+        <div class="flex gap-2">
+          <span class="badge" style="font-size:11px;">高效 · 开发体验优先</span>
+        </div>
+      </div>
+      <!-- Cap 6 -->
+      <div class="card glass-card rounded-2xl p-6 reveal reveal-delay-2 cursor-default">
+        <div style="width:40px;height:40px;background:rgba(251,191,36,0.12);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#fbbf24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+        </div>
+        <h3 style="font-weight:800;font-size:16px;margin-bottom:8px;">直通 RoboChallenge 真机评测</h3>
+        <p style="font-size:13px;color:#64748b;line-height:1.7;margin-bottom:14px;">原生集成 RC 评测接口。仿真→真机一条命令提交，目前唯一支持完整闭环的开源 VLA 工具箱。</p>
+        <div class="flex gap-2">
+          <span class="badge badge-amber" style="font-size:11px;">独有差异化</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STRATEGY TABLE -->
+<section class="py-24" style="background:rgba(255,255,255,0.01);">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="text-center mb-14 reveal">
+      <div class="t-label mb-3">SUPPORTED STRATEGIES</div>
+      <h2 style="font-size:2.2rem;font-weight:900;letter-spacing:-0.03em;">支持 5 种前沿 <span class="g-blue">VLA 策略</span></h2>
+      <p style="color:#94a3b8;font-size:15px;margin-top:8px;">选择适合你任务的策略，其余配置 Dexbotic 帮你搞定</p>
+    </div>
+
+    <div class="card glass-card rounded-2xl overflow-hidden reveal">
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:14px;">
+          <thead>
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
+              <th style="padding:14px 20px;text-align:left;color:#94a3b8;font-weight:600;font-size:12px;letter-spacing:0.05em;">策略</th>
+              <th style="padding:14px 20px;text-align:left;color:#94a3b8;font-weight:600;font-size:12px;letter-spacing:0.05em;">类型</th>
+              <th style="padding:14px 20px;text-align:left;color:#94a3b8;font-weight:600;font-size:12px;letter-spacing:0.05em;">最适合场景</th>
+              <th style="padding:14px 20px;text-align:left;color:#94a3b8;font-weight:600;font-size:12px;letter-spacing:0.05em;">数据量</th>
+              <th style="padding:14px 20px;text-align:left;color:#94a3b8;font-weight:600;font-size:12px;letter-spacing:0.05em;">推荐</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="background:rgba(74,222,128,0.05);border-bottom:1px solid rgba(255,255,255,0.04);">
+              <td style="padding:14px 20px;"><span style="font-weight:800;color:#f1f5f9;">DM0</span> <span class="badge" style="font-size:10px;padding:2px 8px;margin-left:6px;">推荐</span></td>
+              <td style="padding:14px 20px;color:#94a3b8;font-family:'JetBrains Mono',monospace;font-size:12px;">扩散策略 + LLM</td>
+              <td style="padding:14px 20px;color:#cbd5e1;">通用操作 / Generalist</td>
+              <td style="padding:14px 20px;color:#94a3b8;">中（500条+）</td>
+              <td style="padding:14px 20px;">⭐⭐⭐⭐⭐</td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+              <td style="padding:14px 20px;font-weight:600;color:#f1f5f9;">π0 (Pi0)</td>
+              <td style="padding:14px 20px;color:#94a3b8;font-family:'JetBrains Mono',monospace;font-size:12px;">扩散策略</td>
+              <td style="padding:14px 20px;color:#cbd5e1;">精细灵巧操作</td>
+              <td style="padding:14px 20px;color:#94a3b8;">多（2000条+）</td>
+              <td style="padding:14px 20px;">⭐⭐⭐⭐</td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+              <td style="padding:14px 20px;font-weight:600;color:#f1f5f9;">OpenVLA-OFT</td>
+              <td style="padding:14px 20px;color:#94a3b8;font-family:'JetBrains Mono',monospace;font-size:12px;">自回归 + LoRA</td>
+              <td style="padding:14px 20px;color:#cbd5e1;">数据量少，快速验证</td>
+              <td style="padding:14px 20px;color:#94a3b8;">少（&lt;500条）</td>
+              <td style="padding:14px 20px;">⭐⭐⭐</td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+              <td style="padding:14px 20px;font-weight:600;color:#f1f5f9;">CogACT</td>
+              <td style="padding:14px 20px;color:#94a3b8;font-family:'JetBrains Mono',monospace;font-size:12px;">扩散策略</td>
+              <td style="padding:14px 20px;color:#cbd5e1;">视觉感知精度高</td>
+              <td style="padding:14px 20px;color:#94a3b8;">中</td>
+              <td style="padding:14px 20px;">⭐⭐⭐</td>
+            </tr>
+            <tr>
+              <td style="padding:14px 20px;font-weight:600;color:#f1f5f9;">MemoryVLA</td>
+              <td style="padding:14px 20px;color:#94a3b8;font-family:'JetBrains Mono',monospace;font-size:12px;">带记忆机制</td>
+              <td style="padding:14px 20px;color:#cbd5e1;">长程多步骤任务</td>
+              <td style="padding:14px 20px;color:#94a3b8;">多</td>
+              <td style="padding:14px 20px;">⭐⭐⭐</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- QUICK START -->
+<section id="quickstart" class="py-24" style="background:#060d1a;">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="text-center mb-14 reveal">
+      <div class="t-label mb-3">QUICK START</div>
+      <h2 style="font-size:2.4rem;font-weight:900;letter-spacing:-0.03em;">30 分钟跑通你的<br>第一次 <span class="g-blue">VLA 训练</span></h2>
+      <p style="color:#94a3b8;font-size:15px;margin-top:8px;">LIBERO 数据集 + DM0 基座 · 最小可行路径</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <!-- Step 1 -->
+      <div class="reveal glass-card rounded-2xl overflow-hidden">
+        <div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:12px;">
+          <span style="width:30px;height:30px;background:#3b82f6;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0;">1</span>
+          <div>
+            <div style="font-weight:700;font-size:15px;">配置环境</div>
+            <div style="font-size:11px;color:#475569;">预计 ~5 分钟</div>
+          </div>
+        </div>
+        <div style="position:relative;">
+          <div class="code-block" style="border:none;border-radius:0;font-size:12.5px;">
+<span class="cm"># 克隆仓库</span>
+<span class="fn">git</span> <span class="kw">clone</span> <span class="str">github.com/dexmal/dexbotic.git</span>
+
+<span class="cm"># 启动 Docker</span>
+<span class="fn">docker</span> <span class="kw">run</span> -it --rm --gpus all \
+  --network host --userns=host \
+  -v $(pwd)/dexbotic:/dexbotic \
+  <span class="str">dexmal/dexbotic bash</span>
+
+<span class="cm"># 激活环境</span>
+<span class="fn">cd</span> /dexbotic
+<span class="fn">conda</span> <span class="kw">activate</span> dexbotic
+<span class="fn">pip</span> install -e .
+          </div>
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="reveal reveal-delay-1 glass-card rounded-2xl overflow-hidden">
+        <div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:12px;">
+          <span style="width:30px;height:30px;background:#8b5cf6;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0;">2</span>
+          <div>
+            <div style="font-weight:700;font-size:15px;">下载模型 &amp; 数据</div>
+            <div style="font-size:11px;color:#475569;">预计 ~10 分钟</div>
+          </div>
+        </div>
+        <div style="position:relative;">
+          <div class="code-block" style="border:none;border-radius:0;font-size:12.5px;">
+<span class="cm"># 国内镜像加速</span>
+<span class="kw">export</span> <span class="nm">HF_ENDPOINT</span>=https://hf-mirror.com
+
+<span class="cm"># 下载 DM0 预训练权重</span>
+<span class="fn">git</span> <span class="kw">clone</span> https://hf-mirror.com/ \
+  <span class="str">Dexmal/DM0-libero DM0-libero</span>
+
+<span class="cm"># 下载 LIBERO 数据集</span>
+<span class="fn">hf</span> download <span class="str">Dexmal/libero</span> \
+  --repo-type=dataset \
+  --local-dir dexbotic/data
+
+<span class="cm"># 下载 CLIP 视觉编码器</span>
+<span class="fn">hf</span> download <span class="str">openai/clip-vit-large-patch14-336</span>
+          </div>
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="reveal reveal-delay-2 glass-card rounded-2xl overflow-hidden">
+        <div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:12px;">
+          <span style="width:30px;height:30px;background:#22c55e;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0;">3</span>
+          <div>
+            <div style="font-weight:700;font-size:15px;">启动训练</div>
+            <div style="font-size:11px;color:#475569;">约 80,000 步</div>
+          </div>
+        </div>
+        <div style="position:relative;">
+          <div class="code-block" style="border:none;border-radius:0;font-size:12.5px;">
+<span class="cm"># 配置路径</span>
+<span class="kw">export</span> <span class="nm">OPENAI_CLIP_PATH</span>=\
+  <span class="str">"path/to/clip-vit-large-patch14"</span>
+
+<span class="cm"># 启动 8 卡分布式训练</span>
+<span class="fn">torchrun</span> --nproc_per_node=<span class="nm">8</span> \
+  path/to/training.py \
+  --task <span class="str">train</span>
+
+<span class="cm"># OOM 时减小 batch size</span>
+<span class="cm"># per_device_train_batch_size=2</span>
+
+<span class="ok">[SUCCESS] LIBERO: 95% ✓</span>
+<span class="ok">[SUCCESS] RC Global #1 🏆</span>
+          </div>
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ROBOCHALLENGE -->
+<section id="robochallenge" class="py-24" style="background:var(--bg);">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+      <div class="reveal">
+        <div class="t-label mb-3">REAL-ROBOT EVALUATION</div>
+        <h2 style="font-size:2.2rem;font-weight:900;letter-spacing:-0.03em;margin-bottom:16px;">仿真训练好了，<br><span class="g-blue">怎么验证真机效果？</span></h2>
+        <p style="color:#94a3b8;font-size:15px;line-height:1.7;margin-bottom:24px;">
+          仿真成功率 ≠ 真机成功率。Dexbotic 原生集成 RoboChallenge 评测接口——全球首个大规模真机评测平台，让你的 LIBERO 95% 在真实世界得到验证。
+        </p>
+        <div style="padding:16px;background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);border-radius:12px;margin-bottom:20px;">
+          <p style="font-size:14px;color:#86efac;font-weight:600;">目前唯一支持此完整闭环的开源 VLA 工具箱</p>
+        </div>
+        <!-- 6-step flow -->
+        <div class="space-y-3">
+          <div class="flex items-start gap-3">
+            <span style="width:22px;height:22px;background:#334155;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;color:#94a3b8;">1</span>
+            <div style="font-size:13px;color:#cbd5e1;"><strong style="color:#f1f5f9;">注册账号</strong>：robochallenge.cn 注册，获取 API Token</div>
+          </div>
+          <div class="flex items-start gap-3">
+            <span style="width:22px;height:22px;background:#334155;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;color:#94a3b8;">2</span>
+            <div style="font-size:13px;color:#cbd5e1;"><strong style="color:#f1f5f9;">克隆评测组件</strong>：git clone Dexbotic-RoboChallengeInference</div>
+          </div>
+          <div class="flex items-start gap-3">
+            <span style="width:22px;height:22px;background:#334155;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;color:#94a3b8;">3</span>
+            <div style="font-size:13px;color:#cbd5e1;"><strong style="color:#f1f5f9;">配置任务 yaml</strong>：仅需填写 checkpoint 路径</div>
+          </div>
+          <div class="flex items-start gap-3">
+            <span style="width:22px;height:22px;background:#334155;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;color:#94a3b8;">4</span>
+            <div style="font-size:13px;color:#cbd5e1;"><strong style="color:#f1f5f9;">提交评测</strong>：nohup python execute.py ... 后台挂起</div>
+          </div>
+          <div class="flex items-start gap-3">
+            <span style="width:22px;height:22px;background:#4ade80;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;color:#000;">5</span>
+            <div style="font-size:13px;color:#86efac;"><strong>查看真机榜单</strong>：实时结果，全球背书</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- YAML config example -->
+      <div class="reveal reveal-delay-1">
+        <div style="background:#0d1117;border:1px solid rgba(74,222,128,0.2);border-radius:12px;overflow:hidden;">
+          <div style="background:#161b22;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:6px;">
+            <span style="width:12px;height:12px;border-radius:50%;background:#ff5f56;"></span>
+            <span style="width:12px;height:12px;border-radius:50%;background:#ffbd2e;"></span>
+            <span style="width:12px;height:12px;border-radius:50%;background:#27c93f;"></span>
+            <span style="margin-left:8px;font-size:12px;color:#475569;font-family:'JetBrains Mono',monospace;">put_cup_on_coaster.yaml</span>
+          </div>
+          <div class="code-block" style="border:none;border-radius:0;">
+<span class="cm"># RoboChallenge 评测配置（只需改一行）</span>
+<span class="key">defaults:</span>
+  - ../default
+
+<span class="key">task_name:</span> <span class="str">put_cup_on_coaster</span>
+<span class="key">checkpoint:</span> <span class="str">/path/to/your/model</span>  <span class="cm"># ← 只改这行</span>
+<span class="key">action_horizon:</span> <span class="nm">25</span>
+<span class="key">use_cache:</span> <span class="nm">true</span>
+
+<span class="cm"># 提交命令</span>
+<span class="fn">nohup</span> python execute.py \
+  --config-name=specialist/put_cup \
+  <span class="nm">user_id</span>=YOUR_TOKEN \
+  <span class="nm">job_collection_id</span>=RUN_ID \
+  &amp;
+          </div>
+        </div>
+
+        <div class="card glass-card rounded-xl p-5 mt-4">
+          <div style="font-size:13px;color:#94a3b8;line-height:1.7;">
+            <strong style="color:#f1f5f9;">Table 30 包含 30 个评测任务</strong>，涵盖：杯子放置、化妆品摆放、物品分拣等真实场景。DM0 在 Generalist 模式下以 <strong style="color:#4ade80;">62.0%</strong> 成功率位居全球第一。
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DEXDATA FORMAT -->
+<section class="py-24" style="background:rgba(255,255,255,0.01);">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="text-center mb-14 reveal">
+      <div class="t-label mb-3">DATA FORMAT</div>
+      <h2 style="font-size:2.2rem;font-weight:900;letter-spacing:-0.03em;">Dexdata —— 具身数据的<span class="g-blue">统一语言</span></h2>
+      <p style="color:#94a3b8;font-size:15px;margin-top:8px;">无论你的数据来自什么机械臂、什么仿真器，都能用 3 步接入 Dexbotic</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
+      <!-- Steps -->
+      <div class="space-y-5 reveal">
+        <div class="card glass-card rounded-xl p-5">
+          <div class="flex items-center gap-3 mb-3">
+            <span style="width:26px;height:26px;background:#3b82f6;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;">1</span>
+            <div style="font-weight:700;font-size:14px;">准备原始数据</div>
+          </div>
+          <div style="font-size:13px;color:#64748b;line-height:1.7;font-family:'JetBrains Mono',monospace;">
+            必须字段：images_1/2/3 · state · prompt · is_robot<br>
+            可选字段：action · subtask · goal_bbox
+          </div>
+        </div>
+        <div class="card glass-card rounded-xl p-5">
+          <div class="flex items-center gap-3 mb-3">
+            <span style="width:26px;height:26px;background:#8b5cf6;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;">2</span>
+            <div style="font-weight:700;font-size:14px;">转换为 Dexdata 格式</div>
+          </div>
+          <div style="font-size:13px;color:#64748b;line-height:1.7;font-family:'JetBrains Mono',monospace;">
+            LeRobot: script/convert_data/lerobot.py<br>
+            RLDS: script/convert_data/rlds.py<br>
+            自定义: 参照模板编写转换脚本
+          </div>
+        </div>
+        <div class="card glass-card rounded-xl p-5">
+          <div class="flex items-center gap-3 mb-3">
+            <span style="width:26px;height:26px;background:#22c55e;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;">3</span>
+            <div style="font-weight:700;font-size:14px;">注册到 Dexbotic</div>
+          </div>
+          <div style="font-size:13px;color:#64748b;line-height:1.7;font-family:'JetBrains Mono',monospace;">
+            在 dexbotic/data/data_source/ 下<br>
+            添加注册文件，定义路径和采样频率
+          </div>
+        </div>
+        <!-- Supported datasets -->
+        <div>
+          <div class="t-label mb-3">支持数据集</div>
+          <div class="flex flex-wrap gap-2">
+            <span style="padding:4px 10px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);border-radius:5px;font-size:12px;color:#93c5fd;font-family:'JetBrains Mono',monospace;">LIBERO</span>
+            <span style="padding:4px 10px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);border-radius:5px;font-size:12px;color:#93c5fd;font-family:'JetBrains Mono',monospace;">CALVIN</span>
+            <span style="padding:4px 10px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);border-radius:5px;font-size:12px;color:#93c5fd;font-family:'JetBrains Mono',monospace;">RoboTwin 2.0</span>
+            <span style="padding:4px 10px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);border-radius:5px;font-size:12px;color:#93c5fd;font-family:'JetBrains Mono',monospace;">ManiSkill2</span>
+            <span style="padding:4px 10px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);border-radius:5px;font-size:12px;color:#93c5fd;font-family:'JetBrains Mono',monospace;">LeRobot SO-101</span>
+            <span style="padding:4px 10px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);border-radius:5px;font-size:12px;color:#93c5fd;font-family:'JetBrains Mono',monospace;">自定义格式</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- JSONL example -->
+      <div class="reveal reveal-delay-1" style="position:relative;">
+        <div class="code-block" style="font-size:12px;">
+<span class="cm">// Dexdata JSONL 格式示例</span>
+{
+  <span class="key">"images_1"</span>: {
+    <span class="key">"type"</span>: <span class="str">"video"</span>,
+    <span class="key">"url"</span>: <span class="str">"path/to/episode_001/cam_wrist.mp4"</span>,
+    <span class="key">"frame_idx"</span>: <span class="nm">21</span>
+  },
+  <span class="key">"images_2"</span>: {
+    <span class="key">"type"</span>: <span class="str">"video"</span>,
+    <span class="key">"url"</span>: <span class="str">"path/to/episode_001/cam_front.mp4"</span>,
+    <span class="key">"frame_idx"</span>: <span class="nm">21</span>
+  },
+  <span class="key">"images_3"</span>: {
+    <span class="key">"type"</span>: <span class="str">"video"</span>,
+    <span class="key">"url"</span>: <span class="str">"path/to/episode_001/cam_side.mp4"</span>,
+    <span class="key">"frame_idx"</span>: <span class="nm">21</span>
+  },
+  <span class="key">"state"</span>: [<span class="nm">0.12</span>, <span class="nm">-0.34</span>, <span class="nm">1.57</span>, <span class="nm">0.08</span>, <span class="nm">-0.22</span>, <span class="nm">0.91</span>],
+  <span class="key">"prompt"</span>: <span class="str">"pick up the red cube and place it in the box"</span>,
+  <span class="key">"is_robot"</span>: <span class="nm">true</span>,
+  <span class="key">"action"</span>: [<span class="nm">0.15</span>, <span class="nm">-0.31</span>, <span class="nm">1.60</span>, <span class="nm">0.10</span>, <span class="nm">-0.19</span>, <span class="nm">0.88</span>],
+  <span class="key">"subtask"</span>: <span class="str">"approach target"</span>,
+  <span class="key">"goal_bbox"</span>: [<span class="nm">0.32</span>, <span class="nm">0.41</span>, <span class="nm">0.58</span>, <span class="nm">0.67</span>]
+}
+        </div>
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="py-24" style="background:linear-gradient(135deg,rgba(74,222,128,0.05) 0%,rgba(34,211,238,0.05) 100%);border-top:1px solid rgba(255,255,255,0.05);">
+  <div class="max-w-3xl mx-auto px-6 text-center reveal">
+    <h2 style="font-size:2.5rem;font-weight:900;letter-spacing:-0.03em;margin-bottom:12px;">选择你的开发路径</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-12 mb-12">
+      <a href="#quickstart" style="text-decoration:none;" class="card glass-card rounded-xl p-6 hover:border-green-500/40 transition-all duration-300 cursor-pointer">
+        <div style="font-size:24px;margin-bottom:10px;">🚀</div>
+        <div style="font-weight:700;font-size:15px;margin-bottom:6px;">我要训练模型</div>
+        <div style="font-size:13px;color:#64748b;">快速开始 →</div>
+      </a>
+      <a href="#dexdata" style="text-decoration:none;" class="card glass-card rounded-xl p-6 hover:border-green-500/40 transition-all duration-300 cursor-pointer">
+        <div style="font-size:24px;margin-bottom:10px;">📊</div>
+        <div style="font-weight:700;font-size:15px;margin-bottom:6px;">我要接入自己数据</div>
+        <div style="font-size:13px;color:#64748b;">Dexdata 格式 →</div>
+      </a>
+      <a href="#robochallenge" style="text-decoration:none;" class="card glass-card rounded-xl p-6 hover:border-green-500/40 transition-all duration-300 cursor-pointer">
+        <div style="font-size:24px;margin-bottom:10px;">🏆</div>
+        <div style="font-weight:700;font-size:15px;margin-bottom:6px;">参加 RC 评测</div>
+        <div style="font-size:13px;color:#64748b;">真机评测教程 →</div>
+      </a>
+    </div>
+    <div class="flex items-center justify-center gap-4 flex-wrap">
+      <a href="https://github.com/dexmal/dexbotic" target="_blank" class="btn btn-blue">GitHub Star ⭐</a>
+      <a href="mailto:contact@dexmal.com" class="btn btn-ghost">商务合作</a>
+    </div>
+  </div>
+</section>
+
+<footer style="background:#020817;border-top:1px solid rgba(255,255,255,0.05);padding:32px 0;">
+  <div class="max-w-7xl mx-auto px-6 flex items-center justify-between flex-wrap gap-4">
+    <a href="../index.html" class="btn btn-ghost btn-sm">← 返回 DexDav 首页</a>
+    <span style="color:#334155;font-size:13px;">© 2026 Dexmal 原力灵机 · MIT License</span>
+  </div>
+</footer>
+
+<script>
+const io = new IntersectionObserver((e) => { e.forEach(en => { if (en.isIntersecting) { en.target.classList.add('visible'); io.unobserve(en.target); } }); }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+const cio = new IntersectionObserver((e) => {
+  e.forEach(en => {
+    if (!en.isIntersecting) return;
+    const el = en.target;
+    const target = parseFloat(el.dataset.count);
+    const suffix = el.dataset.suffix || '';
+    let start = null;
+    function step(ts) {
+      if (!start) start = ts;
+      const p = Math.min((ts - start) / 1200, 1);
+      const ease = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.floor(target * ease) + suffix;
+      if (p < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+    cio.unobserve(el);
+  });
+}, { threshold: 0.5 });
+document.querySelectorAll('[data-count]').forEach(el => cio.observe(el));
+
+function copyCode(btn) {
+  const block = btn.previousElementSibling.querySelector ? (btn.previousElementSibling.querySelector('.code-block') || btn.previousElementSibling) : btn.previousElementSibling;
+  const text = (block.innerText || block.textContent);
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copied!'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+</script>
+
+<script>
+// Scroll progress
+const _sp = document.getElementById('scroll-progress');
+if (_sp) window.addEventListener('scroll', () => {
+  _sp.style.transform = 'scaleX(' + window.scrollY/(document.documentElement.scrollHeight-window.innerHeight) + ')';
+}, {passive:true});
+// Nav scroll state
+const _nav = document.getElementById('main-nav');
+if (_nav) window.addEventListener('scroll', () => _nav.classList.toggle('scrolled', window.scrollY>60), {passive:true});
+// Hamburger
+const _hb = document.getElementById('hamburger'), _mm = document.getElementById('mobile-menu');
+if (_hb) {
+  _hb.addEventListener('click', () => { _hb.classList.toggle('open'); _mm.classList.toggle('open'); });
+  document.addEventListener('click', e => { if (!_hb.contains(e.target) && !_mm.contains(e.target)) { _hb.classList.remove('open'); _mm.classList.remove('open'); }});
+}
+// Scroll reveal
+const _io = new IntersectionObserver(e => e.forEach(en => { if(en.isIntersecting){en.target.classList.add('visible');_io.unobserve(en.target);}}), {threshold:0.08,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.reveal,.reveal-left').forEach(el=>_io.observe(el));
+// Counters
+const _co = new IntersectionObserver(e => e.forEach(en => {
+  if(!en.isIntersecting)return;
+  const el=en.target,t=parseFloat(el.dataset.count),s=el.dataset.suffix||'',f=String(t).includes('.');
+  let st=null;(function step(ts){if(!st)st=ts;const p=Math.min((ts-st)/1300,1),ease=1-Math.pow(1-p,3);
+  el.textContent=(f?(t*ease).toFixed(1):Math.floor(t*ease))+s;if(p<1)requestAnimationFrame(step);})(performance.now());
+  _co.unobserve(el);
+}),{threshold:0.5});
+document.querySelectorAll('[data-count]').forEach(el=>_co.observe(el));
+// Benchmark bars
+const _bc = document.getElementById('bench-chart');
+if(_bc){const _bi=new IntersectionObserver(e=>{if(!e[0].isIntersecting)return;
+  _bc.querySelectorAll('.bench-fill').forEach(b=>{const w=parseFloat(b.dataset.width);setTimeout(()=>{b.style.width=(w/62*100)+'%';},250);});
+  _bc.querySelectorAll('.bench-val').forEach(v=>{const t=parseFloat(v.dataset.val);let st=null;
+  (function step(ts){if(!st)st=ts;const p=Math.min((ts-st)/1100,1),ease=1-Math.pow(1-p,3);v.textContent=(t*ease).toFixed(1)+'%';if(p<1)requestAnimationFrame(step);})(performance.now());});
+  _bi.unobserve(_bc);},{threshold:0.3});_bi.observe(_bc);}
+// Copy
+function copyCode(btn){const pre=btn.previousElementSibling;navigator.clipboard.writeText(pre.innerText).then(()=>{btn.textContent='copied!';btn.classList.add('copied');setTimeout(()=>{btn.textContent='copy';btn.classList.remove('copied');},2000);}).catch(()=>{});}
+</script>
+
+</body>
+</html>

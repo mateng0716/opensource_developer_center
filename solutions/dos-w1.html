@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DOS-W1 · 开源双臂机器人 | DexDav</title>
+  <meta name="description" content="DOS-W1 — 17 DOF 开源双臂机器人，主从分离架构，BOM+图纸+SDK 全开源，打通数据采集到真机推理全链路。">
+  <link rel="stylesheet" href="../assets/shared.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>tailwind.config={theme:{extend:{fontFamily:{'mono':['JetBrains Mono','monospace'],'sans':['DM Sans','sans-serif'],'head':['Space Grotesk','sans-serif']}}}}</script>
+  <style>
+    :root{--bg:#020817;--surface:#0d1117;--card:#0f172a;}
+    *{box-sizing:border-box;} html{background:var(--bg);}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:#f1f5f9;overflow-x:hidden;}
+    .dot-grid{background-image:radial-gradient(circle,rgba(255,255,255,0.05) 1px,transparent 1px);background-size:32px 32px;}
+    .gradient-text{background:linear-gradient(135deg,#a78bfa 0%,#60a5fa 50%,#c4b5fd 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .glass-card{background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);transition:border-color 0.2s,box-shadow 0.2s;}
+    .glass-card:hover{border-color:rgba(167,139,250,0.3);}
+    
+    .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:500;border:1px solid rgba(167,139,250,0.4);background:rgba(167,139,250,0.1);color:#c4b5fd;}
+    .badge-green{border-color:rgba(74,222,128,0.4);background:rgba(74,222,128,0.1);color:#86efac;}
+    .badge-blue{border-color:rgba(59,130,246,0.4);background:rgba(59,130,246,0.1);color:#93c5fd;}
+    .btn-primary{display:inline-flex;align-items:center;gap:8px;padding:11px 24px;border-radius:8px;font-weight:600;font-size:15px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;cursor:pointer;transition:all 0.2s;text-decoration:none;}
+    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 25px rgba(139,92,246,0.3);}
+    .btn-secondary{display:inline-flex;align-items:center;gap:8px;padding:11px 24px;border-radius:8px;font-weight:600;font-size:15px;background:transparent;color:#f1f5f9;cursor:pointer;border:1px solid rgba(255,255,255,0.2);transition:all 0.2s;text-decoration:none;}
+    .btn-secondary:hover{border-color:rgba(255,255,255,0.4);background:rgba(255,255,255,0.05);}
+    .section-label{font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#475569;}
+    .glow-line{height:1px;background:linear-gradient(90deg,transparent,rgba(139,92,246,0.5),rgba(96,165,250,0.4),transparent);}
+    
+    
+    .reveal{opacity:0;transform:translateY(24px);transition:opacity 0.7s ease,transform 0.7s ease;}
+    .reveal.visible{opacity:1;transform:translateY(0);}
+    .reveal-delay-1{transition-delay:0.1s;} .reveal-delay-2{transition-delay:0.2s;} .reveal-delay-3{transition-delay:0.3s;}
+    .feature-card{background:rgba(15,23,42,0.7);border:1px solid rgba(167,139,250,0.12);border-radius:16px;padding:24px;transition:all 0.25s;cursor:default;}
+    .feature-card:hover{border-color:rgba(167,139,250,0.35);transform:translateY(-3px);box-shadow:0 12px 40px rgba(139,92,246,0.1);}
+    ::-webkit-scrollbar{width:6px;} ::-webkit-scrollbar-track{background:var(--bg);} ::-webkit-scrollbar-thumb{background:#1e293b;border-radius:3px;}
+  </style>
+</head>
+<body>
+<div id="scroll-progress"></div>
+
+<!-- NAV -->
+<div class="nav-pill-wrap">
+  <nav class="nav-pill" id="main-nav">
+    <a href="../index.html" class="nav-logo">
+      <div class="nav-logo-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5.64 5.64l2.12 2.12M16.24 16.24l2.12 2.12M5.64 18.36l2.12-2.12M16.24 7.76l2.12-2.12"/></svg>
+      </div>
+      <span class="nav-logo-name">DexDav</span>
+    </a>
+    <div class="nav-links">
+      <a href="dm0.html" class="nav-link-pill">DM0</a>
+      <a href="dexbotic.html" class="nav-link-pill">Dexbotic</a>
+      <a href="dos-w1.html" class="nav-link-pill active">DOS-W1</a>
+      <a href="research.html" class="nav-link-pill">科研高校</a>
+      <a href="vocational.html" class="nav-link-pill">职业教育</a>
+    </div>
+    <div class="nav-actions">
+      <a href="https://github.com/dexmal/dexbotic" target="_blank" class="btn btn-ghost btn-sm" aria-label="GitHub">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+        GitHub
+      </a>
+      <a href="dexbotic.html#quickstart" class="btn btn-glow btn-sm">快速开始</a>
+      <button class="nav-hamburger" id="hamburger" aria-label="菜单"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+</div>
+<div class="nav-mobile-menu" id="mobile-menu">
+  <a href="dm0.html"        class="nav-mobile-link">DM0 模型</a>
+  <a href="dexbotic.html"   class="nav-mobile-link">Dexbotic 框架</a>
+  <a href="dos-w1.html"     class="nav-mobile-link">DOS-W1 硬件</a>
+  <div class="nav-mobile-divider"></div>
+  <a href="research.html"   class="nav-mobile-link">科研高校方案</a>
+  <a href="vocational.html" class="nav-mobile-link">职业教育方案</a>
+  <div class="nav-mobile-divider"></div>
+  <a href="https://github.com/dexmal/dexbotic" target="_blank" class="nav-mobile-link">GitHub →</a>
+  <a href="dexbotic.html#quickstart" class="btn btn-blue btn-md" style="text-align:center;margin-top:4px;border-radius:10px;">快速开始</a>
+</div>
+
+<!-- HERO -->
+<section class="relative min-h-screen flex items-center dot-grid pt-24 overflow-hidden">
+  <!-- Background orbs -->
+  <div style="position:absolute;width:600px;height:600px;top:-200px;right:-100px;background:radial-gradient(circle,rgba(139,92,246,0.12) 0%,transparent 70%);border-radius:50%;pointer-events:none;"></div>
+  <div style="position:absolute;width:500px;height:500px;bottom:-100px;left:-100px;background:radial-gradient(circle,rgba(96,165,250,0.09) 0%,transparent 70%);border-radius:50%;pointer-events:none;"></div>
+
+  <div class="max-w-7xl mx-auto px-6 py-24 w-full relative z-10">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <!-- Left copy -->
+      <div class="reveal">
+        <div class="flex flex-wrap gap-3 mb-6">
+          <span class="badge">自研开源双臂机器人 · MIT License</span>
+          <span class="badge-green" style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:500;border:1px solid rgba(74,222,128,0.4);background:rgba(74,222,128,0.1);color:#86efac;">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            全链路开源
+          </span>
+        </div>
+
+        <h1 style="font-size:5rem;font-weight:900;letter-spacing:-0.04em;line-height:1;margin-bottom:8px;" class="g-blue">DOS-W1</h1>
+        <div style="font-size:1.5rem;font-weight:700;color:#f1f5f9;margin-bottom:20px;">双臂数采 &amp; 推理机器人</div>
+
+        <p style="font-size:17px;color:#94a3b8;line-height:1.75;max-width:520px;margin-bottom:36px;">
+          <strong style="color:#c4b5fd;">17 自由度</strong>，主从分离架构，不受空间限制。完全开源——BOM + 三维图纸 + CMF 规范 + 全套 SDK。<br>
+          与 Dexbotic 框架原生集成，打通<strong style="color:#c4b5fd;">采集→训练→推理</strong>全链路。
+        </p>
+
+        <div class="flex flex-wrap gap-4 mb-10">
+          <a href="mailto:contact@dexmal.com" class="btn btn-blue">
+            申请部署 / 了解价格
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <a href="https://github.com/dexmal/dexbotic" target="_blank" class="btn btn-ghost">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+            查看 GitHub 开源
+          </a>
+        </div>
+      </div>
+
+      <!-- Right: Robot visualization -->
+      <div class="reveal reveal-delay-2">
+        <div style="background:rgba(15,23,42,0.8);border:1px solid rgba(167,139,250,0.2);border-radius:20px;padding:32px;box-shadow:0 0 60px rgba(139,92,246,0.1);position:relative;overflow:hidden;">
+          <div style="position:absolute;top:0;right:0;width:200px;height:200px;background:radial-gradient(circle,rgba(139,92,246,0.15) 0%,transparent 70%);pointer-events:none;"></div>
+
+          <!-- Enhanced robot SVG -->
+          <svg viewBox="0 0 420 400" width="100%" xmlns="http://www.w3.org/2000/svg" style="font-family:'JetBrains Mono',monospace;">
+            <defs>
+              <linearGradient id="vGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1"/>
+                <stop offset="100%" style="stop-color:#60a5fa;stop-opacity:1"/>
+              </linearGradient>
+              <filter id="vGlow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <pattern id="vGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(139,92,246,0.07)" stroke-width="0.5"/>
+              </pattern>
+            </defs>
+            <rect width="420" height="400" fill="url(#vGrid)" rx="12"/>
+
+            <!-- Platform/stand -->
+            <rect x="160" y="355" width="100" height="28" rx="5" fill="rgba(139,92,246,0.2)" stroke="rgba(139,92,246,0.5)" stroke-width="1.5"/>
+            <text x="210" y="373" fill="rgba(139,92,246,0.8)" font-size="8" text-anchor="middle">DOS-W1 BASE</text>
+
+            <!-- Torso -->
+            <rect x="172" y="230" width="76" height="125" rx="10" fill="rgba(10,15,30,0.95)" stroke="url(#vGrad)" stroke-width="1.8"/>
+            <!-- Torso details -->
+            <rect x="182" y="244" width="56" height="70" rx="6" fill="rgba(139,92,246,0.07)" stroke="rgba(139,92,246,0.2)" stroke-width="1"/>
+            <circle cx="210" cy="274" r="14" fill="none" stroke="rgba(139,92,246,0.4)" stroke-width="1.5"/>
+            <circle cx="210" cy="274" r="8" fill="none" stroke="rgba(96,165,250,0.4)" stroke-width="1"/>
+            <circle cx="210" cy="274" r="4" fill="rgba(139,92,246,0.6)" filter="url(#vGlow)"/>
+            <!-- Status LEDs -->
+            <circle cx="192" cy="298" r="3" fill="#4ade80" filter="url(#vGlow)"/>
+            <circle cx="202" cy="298" r="3" fill="#3b82f6" filter="url(#vGlow)"/>
+            <circle cx="212" cy="298" r="3" fill="#a78bfa" filter="url(#vGlow)"/>
+
+            <!-- Head/sensor unit -->
+            <rect x="178" y="186" width="64" height="44" rx="10" fill="rgba(10,15,30,0.95)" stroke="url(#vGrad)" stroke-width="1.8"/>
+            <!-- Camera sensors -->
+            <rect x="186" y="195" width="20" height="14" rx="3" fill="rgba(96,165,250,0.12)" stroke="rgba(96,165,250,0.4)" stroke-width="1"/>
+            <rect x="214" y="195" width="20" height="14" rx="3" fill="rgba(96,165,250,0.12)" stroke="rgba(96,165,250,0.4)" stroke-width="1"/>
+            <circle cx="196" cy="202" r="5" fill="rgba(96,165,250,0.6)" filter="url(#vGlow)"/>
+            <circle cx="224" cy="202" r="5" fill="rgba(96,165,250,0.6)" filter="url(#vGlow)"/>
+            <!-- Depth sensor bar -->
+            <rect x="186" y="212" width="48" height="6" rx="3" fill="rgba(34,211,238,0.3)" stroke="rgba(34,211,238,0.5)" stroke-width="0.8"/>
+
+            <!-- Left shoulder joint -->
+            <circle cx="162" cy="242" r="12" fill="rgba(10,15,30,0.95)" stroke="url(#vGrad)" stroke-width="1.8"/>
+            <circle cx="162" cy="242" r="6" fill="rgba(139,92,246,0.4)" filter="url(#vGlow)"/>
+
+            <!-- Left upper arm -->
+            <rect x="100" y="237" width="62" height="14" rx="7" fill="rgba(10,15,30,0.95)" stroke="rgba(139,92,246,0.5)" stroke-width="1.5"/>
+
+            <!-- Left elbow joint -->
+            <circle cx="94" cy="244" r="10" fill="rgba(10,15,30,0.95)" stroke="rgba(96,165,250,0.5)" stroke-width="1.5"/>
+            <circle cx="94" cy="244" r="5" fill="rgba(96,165,250,0.4)" filter="url(#vGlow)"/>
+
+            <!-- Left forearm -->
+            <rect x="78" y="248" width="14" height="58" rx="7" fill="rgba(10,15,30,0.95)" stroke="rgba(139,92,246,0.4)" stroke-width="1.5"/>
+
+            <!-- Left wrist -->
+            <rect x="66" y="300" width="38" height="12" rx="6" fill="rgba(10,15,30,0.95)" stroke="rgba(139,92,246,0.5)" stroke-width="1.5"/>
+
+            <!-- Left fingers -->
+            <rect x="56" y="307" width="8" height="22" rx="4" fill="rgba(139,92,246,0.5)" stroke="rgba(139,92,246,0.7)" stroke-width="1"/>
+            <rect x="67" y="307" width="8" height="25" rx="4" fill="rgba(139,92,246,0.5)" stroke="rgba(139,92,246,0.7)" stroke-width="1"/>
+            <rect x="78" y="307" width="8" height="20" rx="4" fill="rgba(139,92,246,0.5)" stroke="rgba(139,92,246,0.7)" stroke-width="1"/>
+            <rect x="88" y="307" width="8" height="18" rx="4" fill="rgba(96,165,250,0.4)" stroke="rgba(96,165,250,0.6)" stroke-width="1" transform="rotate(20 92 315)"/>
+
+            <!-- Right shoulder joint -->
+            <circle cx="258" cy="242" r="12" fill="rgba(10,15,30,0.95)" stroke="url(#vGrad)" stroke-width="1.8"/>
+            <circle cx="258" cy="242" r="6" fill="rgba(139,92,246,0.4)" filter="url(#vGlow)"/>
+
+            <!-- Right upper arm -->
+            <rect x="258" y="237" width="62" height="14" rx="7" fill="rgba(10,15,30,0.95)" stroke="rgba(139,92,246,0.5)" stroke-width="1.5"/>
+
+            <!-- Right elbow joint -->
+            <circle cx="326" cy="244" r="10" fill="rgba(10,15,30,0.95)" stroke="rgba(96,165,250,0.5)" stroke-width="1.5"/>
+            <circle cx="326" cy="244" r="5" fill="rgba(96,165,250,0.4)" filter="url(#vGlow)"/>
+
+            <!-- Right forearm -->
+            <rect x="328" y="248" width="14" height="58" rx="7" fill="rgba(10,15,30,0.95)" stroke="rgba(139,92,246,0.4)" stroke-width="1.5"/>
+
+            <!-- Right wrist -->
+            <rect x="316" y="300" width="38" height="12" rx="6" fill="rgba(10,15,30,0.95)" stroke="rgba(139,92,246,0.5)" stroke-width="1.5"/>
+
+            <!-- Right fingers -->
+            <rect x="346" y="307" width="8" height="22" rx="4" fill="rgba(139,92,246,0.5)" stroke="rgba(139,92,246,0.7)" stroke-width="1"/>
+            <rect x="335" y="307" width="8" height="25" rx="4" fill="rgba(139,92,246,0.5)" stroke="rgba(139,92,246,0.7)" stroke-width="1"/>
+            <rect x="324" y="307" width="8" height="20" rx="4" fill="rgba(139,92,246,0.5)" stroke="rgba(139,92,246,0.7)" stroke-width="1"/>
+            <rect x="313" y="307" width="8" height="18" rx="4" fill="rgba(96,165,250,0.4)" stroke="rgba(96,165,250,0.6)" stroke-width="1" transform="rotate(-20 317 315)"/>
+
+            <!-- Data flow / inference annotation lines -->
+            <path d="M 210 182 L 210 100" stroke="rgba(139,92,246,0.2)" stroke-width="1" stroke-dasharray="3 4"/>
+            <circle cx="210" cy="96" r="5" fill="rgba(139,92,246,0.5)" filter="url(#vGlow)"/>
+            <text x="210" y="84" fill="rgba(139,92,246,0.8)" font-size="8" text-anchor="middle">DM0 25Hz</text>
+
+            <path d="M 78 270 L 30 200" stroke="rgba(96,165,250,0.2)" stroke-width="1" stroke-dasharray="3 5"/>
+            <text x="18" y="196" fill="rgba(96,165,250,0.7)" font-size="7" text-anchor="middle">cam_wrist_L</text>
+
+            <path d="M 342 270 L 390 200" stroke="rgba(96,165,250,0.2)" stroke-width="1" stroke-dasharray="3 5"/>
+            <text x="400" y="196" fill="rgba(96,165,250,0.7)" font-size="7" text-anchor="middle">cam_wrist_R</text>
+
+            <!-- Foot pedal annotation -->
+            <path d="M 210 383 L 210 395" stroke="rgba(74,222,128,0.3)" stroke-width="1"/>
+            <text x="60" y="395" fill="rgba(74,222,128,0.6)" font-size="8">⌐ 脚踏板控制</text>
+            <text x="285" y="395" fill="rgba(74,222,128,0.6)" font-size="8">吊线助力 ⌐</text>
+
+            <!-- DOF labels -->
+            <text x="130" y="232" fill="rgba(139,92,246,0.6)" font-size="7" text-anchor="middle">6 DOF</text>
+            <text x="290" y="232" fill="rgba(139,92,246,0.6)" font-size="7" text-anchor="middle">6 DOF</text>
+            <text x="210" y="180" fill="rgba(96,165,250,0.6)" font-size="7" text-anchor="middle">5 DOF head/torso</text>
+          </svg>
+
+          <!-- Info chips below robot -->
+          <div class="flex flex-wrap gap-2 justify-center mt-4">
+            <span style="padding:4px 10px;background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.3);border-radius:6px;font-size:11px;color:#c4b5fd;font-family:'JetBrains Mono',monospace;">17 DOF</span>
+            <span style="padding:4px 10px;background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);border-radius:6px;font-size:11px;color:#86efac;font-family:'JetBrains Mono',monospace;">MIT License</span>
+            <span style="padding:4px 10px;background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.3);border-radius:6px;font-size:11px;color:#93c5fd;font-family:'JetBrains Mono',monospace;">主从分离</span>
+            <span style="padding:4px 10px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.25);border-radius:6px;font-size:11px;color:#fde68a;font-family:'JetBrains Mono',monospace;">RC 评测主力机型</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="position:absolute;bottom:0;left:0;right:0;height:100px;background:linear-gradient(transparent,var(--bg));pointer-events:none;"></div>
+</section>
+
+<!-- STATS -->
+<section>
+  <div class="glow-line"></div>
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-white/5">
+      <div class="py-8 px-6 text-center reveal">
+        <div style="font-size:42px;font-weight:900;color:#a78bfa;letter-spacing:-0.02em;">17</div>
+        <div class="t-label mt-2">整机自由度</div>
+      </div>
+      <div class="py-8 px-6 text-center reveal reveal-delay-1">
+        <div style="font-size:42px;font-weight:900;color:#a78bfa;letter-spacing:-0.02em;">4</div>
+        <div class="t-label mt-2">核心硬件创新</div>
+      </div>
+      <div class="py-8 px-6 text-center reveal reveal-delay-2">
+        <div style="font-size:28px;font-weight:900;color:#4ade80;letter-spacing:-0.02em;">MIT</div>
+        <div class="t-label mt-2">开源协议</div>
+      </div>
+      <div class="py-8 px-6 text-center reveal reveal-delay-3">
+        <div style="font-size:26px;font-weight:900;color:#60a5fa;letter-spacing:-0.02em;">全链路</div>
+        <div class="t-label mt-2">采集→训练→推理</div>
+      </div>
+    </div>
+  </div>
+  <div class="glow-line"></div>
+</section>
+
+<!-- 4 HARDWARE INNOVATIONS -->
+<section class="py-24" style="background:var(--bg);">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="text-center mb-14 reveal">
+      <div class="t-label mb-3">HARDWARE INNOVATIONS</div>
+      <h2 style="font-size:2.4rem;font-weight:900;letter-spacing:-0.03em;">四大硬件<span class="g-blue">创新突破</span></h2>
+      <p style="color:#94a3b8;font-size:16px;margin-top:8px;">专为具身智能数据采集与真机推理设计的工程细节</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <!-- Innovation 1 -->
+      <div class="feature-card reveal">
+        <div class="flex items-start gap-4">
+          <div style="width:52px;height:52px;background:linear-gradient(135deg,rgba(139,92,246,0.25),rgba(96,165,250,0.15));border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(139,92,246,0.3);">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.8"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+          </div>
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+              <span style="width:22px;height:22px;background:rgba(139,92,246,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#c4b5fd;">1</span>
+              <h3 style="font-weight:800;font-size:17px;">主从分离，摆脱空间限制</h3>
+            </div>
+            <p style="font-size:14px;color:#64748b;line-height:1.7;">主从体分离设计，操作员不受任务空间布局约束，更灵活高效，适配更多采集场景。无论桌面、货架还是复杂工位，操作员始终处于最舒适的操作姿态。</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Innovation 2 -->
+      <div class="feature-card reveal reveal-delay-1">
+        <div class="flex items-start gap-4">
+          <div style="width:52px;height:52px;background:linear-gradient(135deg,rgba(96,165,250,0.2),rgba(34,211,238,0.12));border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(96,165,250,0.3);">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.8"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          </div>
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+              <span style="width:22px;height:22px;background:rgba(96,165,250,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#93c5fd;">2</span>
+              <h3 style="font-weight:800;font-size:17px;">灵活拆卸，便捷更换配件</h3>
+            </div>
+            <p style="font-size:14px;color:#64748b;line-height:1.7;">分体式结构，零部件更新或维修更简单便捷，支持自定义更换零部件。模块化设计让升级末端执行器或传感器无需整机停机，维护成本极低。</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Innovation 3 -->
+      <div class="feature-card reveal">
+        <div class="flex items-start gap-4">
+          <div style="width:52px;height:52px;background:linear-gradient(135deg,rgba(74,222,128,0.15),rgba(34,211,238,0.12));border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(74,222,128,0.3);">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          </div>
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+              <span style="width:22px;height:22px;background:rgba(74,222,128,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#86efac;">3</span>
+              <h3 style="font-weight:800;font-size:17px;">脚踏板控制，解放双手</h3>
+            </div>
+            <p style="font-size:14px;color:#64748b;line-height:1.7;">外接脚踏板硬件控制采集的开始/暂停/接管，支持采集 Dagger 纠错数据，大幅提高采集效率。操作员双手始终在任务上，无需分心切换控制界面。</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Innovation 4 -->
+      <div class="feature-card reveal reveal-delay-1">
+        <div class="flex items-start gap-4">
+          <div style="width:52px;height:52px;background:linear-gradient(135deg,rgba(251,191,36,0.15),rgba(251,146,60,0.1));border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(251,191,36,0.3);">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+              <span style="width:22px;height:22px;background:rgba(251,191,36,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fde68a;">4</span>
+              <h3 style="font-weight:800;font-size:17px;">吊线助力，长时作业友好</h3>
+            </div>
+            <p style="font-size:14px;color:#64748b;line-height:1.7;">减轻数据采集员操作负重，长时间作业更轻松精准。解决业界普遍存在的操作员疲劳问题，大规模数据采集场景中提升数据质量一致性。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SOFTWARE PLATFORM -->
+<section class="py-24" style="background:rgba(255,255,255,0.015);">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="text-center mb-14 reveal">
+      <div class="t-label mb-3">SOFTWARE PLATFORM</div>
+      <h2 style="font-size:2.4rem;font-weight:900;letter-spacing:-0.03em;">配套<span class="g-blue">软件平台</span></h2>
+      <p style="color:#94a3b8;font-size:16px;margin-top:8px;">硬件之外，完整的数据管理与训练推理平台</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Data Management Platform -->
+      <div class="card glass-card rounded-2xl p-7 reveal">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+          <div style="width:44px;height:44px;background:rgba(96,165,250,0.15);border-radius:12px;display:flex;align-items:center;justify-content:center;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <div>
+            <h3 style="font-weight:800;font-size:17px;">一站式数据管理系统</h3>
+            <div style="font-size:12px;color:#60a5fa;margin-top:2px;">采集 · 质检 · 标注 · 存储</div>
+          </div>
+        </div>
+        <div class="space-y-3">
+          <div class="flex items-start gap-3">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2.5" style="margin-top:2px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>
+            <span style="font-size:14px;color:#94a3b8;">数采实时可视化，保障采集精度和效率</span>
+          </div>
+          <div class="flex items-start gap-3">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2.5" style="margin-top:2px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>
+            <span style="font-size:14px;color:#94a3b8;">多视角回放，数据质检（判断质量是否合格）</span>
+          </div>
+          <div class="flex items-start gap-3">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2.5" style="margin-top:2px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>
+            <span style="font-size:14px;color:#94a3b8;">标注平台：核心动作片段 + 画面物体标注</span>
+          </div>
+          <div class="flex items-start gap-3">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2.5" style="margin-top:2px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>
+            <span style="font-size:14px;color:#94a3b8;">数据以 <code style="color:#60a5fa;font-family:'JetBrains Mono',monospace;font-size:12px;">.OpenPDD</code> 格式存储，无缝转换 LeRobot 格式</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Training & Inference Platform -->
+      <div class="card glass-card rounded-2xl p-7 reveal reveal-delay-1">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+          <div style="width:44px;height:44px;background:rgba(139,92,246,0.15);border-radius:12px;display:flex;align-items:center;justify-content:center;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+          </div>
+          <div>
+            <h3 style="font-weight:800;font-size:17px;">一站式模型训练推理平台</h3>
+            <div style="font-size:12px;color:#a78bfa;margin-top:2px;">训练 · 管理 · 推理 · 部署</div>
+          </div>
+        </div>
+        <div class="space-y-3">
+          <div class="flex items-start gap-3">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2.5" style="margin-top:2px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>
+            <span style="font-size:14px;color:#94a3b8;">集成 Dexbotic 具身开源框架，解决环境配置问题</span>
+          </div>
+          <div class="flex items-start gap-3">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2.5" style="margin-top:2px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>
+            <span style="font-size:14px;color:#94a3b8;">整合数据管理、模型管理、算力管理，训练状态可视化</span>
+          </div>
+          <div class="flex items-start gap-3">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2.5" style="margin-top:2px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>
+            <span style="font-size:14px;color:#94a3b8;">灵活配置推理任务，支持远程真机推理</span>
+          </div>
+          <div class="flex items-start gap-3">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2.5" style="margin-top:2px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>
+            <span style="font-size:14px;color:#94a3b8;">打通模型训练上下游全链路，一套平台管理全流程</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- OPEN SOURCE ASSETS -->
+<section class="py-24" style="background:var(--bg);">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+      <div class="reveal">
+        <div class="t-label mb-3">OPEN SOURCE ASSETS</div>
+        <h2 style="font-size:2.2rem;font-weight:900;letter-spacing:-0.03em;margin-bottom:16px;">完全开源<br><span class="g-blue">BOM + 图纸 + SDK</span></h2>
+        <p style="color:#94a3b8;font-size:15px;line-height:1.7;margin-bottom:28px;">DOS-W1 的一切都是开放的。无论你是想复现、改进还是商业化，源文件完整可用。</p>
+
+        <div class="grid grid-cols-1 gap-3">
+          <div class="flex items-center gap-4 p-4 rounded-xl" style="background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.15);">
+            <div style="width:36px;height:36px;background:rgba(139,92,246,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            </div>
+            <div>
+              <div style="font-weight:700;font-size:14px;">数据集</div>
+              <div style="font-size:12px;color:#64748b;margin-top:2px;">DOS-W1 多任务海量数据集，可用于训练 VLA 模型</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 p-4 rounded-xl" style="background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.15);">
+            <div style="width:36px;height:36px;background:rgba(139,92,246,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.8"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            </div>
+            <div>
+              <div style="font-weight:700;font-size:14px;">采集脚本</div>
+              <div style="font-size:12px;color:#64748b;margin-top:2px;">全套数据采集代码 + 标准数据格式转换代码</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 p-4 rounded-xl" style="background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.15);">
+            <div style="width:36px;height:36px;background:rgba(139,92,246,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M16.24 7.76a6 6 0 0 1 0 8.49M4.93 19.07a10 10 0 0 1 0-14.14M7.76 16.24a6 6 0 0 1 0-8.49"/></svg>
+            </div>
+            <div>
+              <div style="font-weight:700;font-size:14px;">模型训练代码</div>
+              <div style="font-size:12px;color:#64748b;margin-top:2px;">全套 VLA 模型训练代码，清晰易用的运行脚本</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 p-4 rounded-xl" style="background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.15);">
+            <div style="width:36px;height:36px;background:rgba(139,92,246,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.8"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+            </div>
+            <div>
+              <div style="font-weight:700;font-size:14px;">硬件 SDK + Demo</div>
+              <div style="font-size:12px;color:#64748b;margin-top:2px;">所有硬件接口 SDK + 模型部署代码 + 完整 VLA Demo</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pipeline flow -->
+      <div class="reveal reveal-delay-1">
+        <div class="t-label mb-5">全链路数据流</div>
+        <div class="space-y-3">
+          <div class="flex items-center gap-4 p-4 rounded-xl" style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.2);">
+            <div style="width:40px;height:40px;background:rgba(139,92,246,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:900;font-size:16px;color:#c4b5fd;">1</div>
+            <div>
+              <div style="font-weight:700;font-size:14px;color:#f1f5f9;">DOS-W1 硬件采集</div>
+              <div style="font-size:12px;color:#64748b;margin-top:2px;">主从遥操 · 脚踏板控制 · 吊线助力 · 多视角录制</div>
+            </div>
+          </div>
+          <div style="height:20px;display:flex;align-items:center;justify-content:center;"><svg width="2" height="20"><line x1="1" y1="0" x2="1" y2="20" stroke="rgba(139,92,246,0.3)" stroke-width="2" stroke-dasharray="3 3"/></svg></div>
+
+          <div class="flex items-center gap-4 p-4 rounded-xl" style="background:rgba(96,165,250,0.07);border:1px solid rgba(96,165,250,0.2);">
+            <div style="width:40px;height:40px;background:rgba(96,165,250,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:900;font-size:16px;color:#93c5fd;">2</div>
+            <div>
+              <div style="font-weight:700;font-size:14px;color:#f1f5f9;">数据管理平台</div>
+              <div style="font-size:12px;color:#64748b;margin-top:2px;">实时可视化 · 质检标注 · .OpenPDD 格式存储</div>
+            </div>
+          </div>
+          <div style="height:20px;display:flex;align-items:center;justify-content:center;"><svg width="2" height="20"><line x1="1" y1="0" x2="1" y2="20" stroke="rgba(96,165,250,0.3)" stroke-width="2" stroke-dasharray="3 3"/></svg></div>
+
+          <div class="flex items-center gap-4 p-4 rounded-xl" style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);">
+            <div style="width:40px;height:40px;background:rgba(74,222,128,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:900;font-size:16px;color:#86efac;">3</div>
+            <div>
+              <div style="font-weight:700;font-size:14px;color:#f1f5f9;">Dexbotic 训练推理</div>
+              <div style="font-size:12px;color:#64748b;margin-top:2px;">DM0 预训练基座 · 多卡分布式训练 · 算力可视化</div>
+            </div>
+          </div>
+          <div style="height:20px;display:flex;align-items:center;justify-content:center;"><svg width="2" height="20"><line x1="1" y1="0" x2="1" y2="20" stroke="rgba(74,222,128,0.3)" stroke-width="2" stroke-dasharray="3 3"/></svg></div>
+
+          <div class="flex items-center gap-4 p-4 rounded-xl" style="background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);">
+            <div style="width:40px;height:40px;background:rgba(251,191,36,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:900;font-size:16px;color:#fde68a;">4</div>
+            <div>
+              <div style="font-weight:700;font-size:14px;color:#f1f5f9;">真机部署 + RC 评测</div>
+              <div style="font-size:12px;color:#64748b;margin-top:2px;">远程真机推理 · RoboChallenge 全球榜单背书</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="py-24" style="background:linear-gradient(135deg,rgba(139,92,246,0.07) 0%,rgba(96,165,250,0.05) 100%);border-top:1px solid rgba(255,255,255,0.05);">
+  <div class="max-w-3xl mx-auto px-6 text-center reveal">
+    <h2 style="font-size:2.4rem;font-weight:900;letter-spacing:-0.03em;margin-bottom:12px;">开始你的<span class="g-blue"> DOS-W1 </span>部署</h2>
+    <p style="color:#94a3b8;font-size:16px;line-height:1.7;margin-bottom:36px;">无论是高校科研还是企业应用，DOS-W1 都能为你打通具身智能研发全链路。</p>
+    <div class="flex items-center justify-center gap-4 flex-wrap mb-8">
+      <a href="mailto:contact@dexmal.com" class="btn btn-blue" style="padding:13px 28px;font-size:15px;">申请部署 / 了解价格</a>
+      <a href="https://github.com/dexmal/dexbotic" target="_blank" class="btn btn-ghost" style="padding:13px 28px;font-size:15px;">查看 GitHub 开源</a>
+    </div>
+    <a href="research.html" style="color:#a78bfa;font-size:14px;text-decoration:none;">了解高校科研解决方案 →</a>
+  </div>
+</section>
+
+<footer style="background:#020817;border-top:1px solid rgba(255,255,255,0.05);padding:32px 0;">
+  <div class="max-w-7xl mx-auto px-6 flex items-center justify-between flex-wrap gap-4">
+    <a href="../index.html" class="btn btn-ghost btn-sm">← 返回 DexDav 首页</a>
+    <span style="color:#334155;font-size:13px;">© 2026 Dexmal 原力灵机 · MIT License</span>
+  </div>
+</footer>
+
+<script>
+const io = new IntersectionObserver((e) => {
+  e.forEach(en => { if (en.isIntersecting) { en.target.classList.add('visible'); io.unobserve(en.target); } });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+</script>
+
+<script>
+// Scroll progress
+const _sp = document.getElementById('scroll-progress');
+if (_sp) window.addEventListener('scroll', () => {
+  _sp.style.transform = 'scaleX(' + window.scrollY/(document.documentElement.scrollHeight-window.innerHeight) + ')';
+}, {passive:true});
+// Nav scroll state
+const _nav = document.getElementById('main-nav');
+if (_nav) window.addEventListener('scroll', () => _nav.classList.toggle('scrolled', window.scrollY>60), {passive:true});
+// Hamburger
+const _hb = document.getElementById('hamburger'), _mm = document.getElementById('mobile-menu');
+if (_hb) {
+  _hb.addEventListener('click', () => { _hb.classList.toggle('open'); _mm.classList.toggle('open'); });
+  document.addEventListener('click', e => { if (!_hb.contains(e.target) && !_mm.contains(e.target)) { _hb.classList.remove('open'); _mm.classList.remove('open'); }});
+}
+// Scroll reveal
+const _io = new IntersectionObserver(e => e.forEach(en => { if(en.isIntersecting){en.target.classList.add('visible');_io.unobserve(en.target);}}), {threshold:0.08,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.reveal,.reveal-left').forEach(el=>_io.observe(el));
+// Counters
+const _co = new IntersectionObserver(e => e.forEach(en => {
+  if(!en.isIntersecting)return;
+  const el=en.target,t=parseFloat(el.dataset.count),s=el.dataset.suffix||'',f=String(t).includes('.');
+  let st=null;(function step(ts){if(!st)st=ts;const p=Math.min((ts-st)/1300,1),ease=1-Math.pow(1-p,3);
+  el.textContent=(f?(t*ease).toFixed(1):Math.floor(t*ease))+s;if(p<1)requestAnimationFrame(step);})(performance.now());
+  _co.unobserve(el);
+}),{threshold:0.5});
+document.querySelectorAll('[data-count]').forEach(el=>_co.observe(el));
+// Benchmark bars
+const _bc = document.getElementById('bench-chart');
+if(_bc){const _bi=new IntersectionObserver(e=>{if(!e[0].isIntersecting)return;
+  _bc.querySelectorAll('.bench-fill').forEach(b=>{const w=parseFloat(b.dataset.width);setTimeout(()=>{b.style.width=(w/62*100)+'%';},250);});
+  _bc.querySelectorAll('.bench-val').forEach(v=>{const t=parseFloat(v.dataset.val);let st=null;
+  (function step(ts){if(!st)st=ts;const p=Math.min((ts-st)/1100,1),ease=1-Math.pow(1-p,3);v.textContent=(t*ease).toFixed(1)+'%';if(p<1)requestAnimationFrame(step);})(performance.now());});
+  _bi.unobserve(_bc);},{threshold:0.3});_bi.observe(_bc);}
+// Copy
+function copyCode(btn){const pre=btn.previousElementSibling;navigator.clipboard.writeText(pre.innerText).then(()=>{btn.textContent='copied!';btn.classList.add('copied');setTimeout(()=>{btn.textContent='copy';btn.classList.remove('copied');},2000);}).catch(()=>{});}
+</script>
+
+</body>
+</html>

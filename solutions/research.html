@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>科研高校解决方案 · 具身智能全链路 | DexDav</title>
+  <meta name="description" content="Dexmal 具身智能科研解决方案 — 为高校实验室提供从数据采集、模型训练到真机验证的完整基础设施，省去 80% 底层踩坑时间。">
+  <link rel="stylesheet" href="../assets/shared.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>tailwind.config={theme:{extend:{fontFamily:{'mono':['JetBrains Mono','monospace'],'sans':['DM Sans','sans-serif'],'head':['Space Grotesk','sans-serif']}}}}</script>
+  <style>
+    :root{--bg:#020817;--indigo-dark:#1e1b4b;}
+    *{box-sizing:border-box;} html{background:var(--bg);}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:#f1f5f9;overflow-x:hidden;}
+    .dot-grid{background-image:radial-gradient(circle,rgba(255,255,255,0.05) 1px,transparent 1px);background-size:32px 32px;}
+    .gradient-text{background:linear-gradient(135deg,#818cf8 0%,#60a5fa 50%,#34d399 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .glass-card{background:rgba(15,23,42,0.65);border:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);transition:all 0.2s;}
+    .glass-card:hover{border-color:rgba(99,102,241,0.3);}
+    
+    .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:500;border:1px solid rgba(99,102,241,0.4);background:rgba(99,102,241,0.1);color:#a5b4fc;}
+    .badge-red{border-color:rgba(239,68,68,0.4);background:rgba(239,68,68,0.08);color:#fca5a5;}
+    .badge-green{border-color:rgba(52,211,153,0.4);background:rgba(52,211,153,0.1);color:#6ee7b7;}
+    .btn-primary{display:inline-flex;align-items:center;gap:8px;padding:11px 24px;border-radius:8px;font-weight:600;font-size:15px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;cursor:pointer;transition:all 0.2s;text-decoration:none;}
+    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 25px rgba(99,102,241,0.35);}
+    .btn-secondary{display:inline-flex;align-items:center;gap:8px;padding:11px 24px;border-radius:8px;font-weight:600;font-size:15px;background:transparent;color:#f1f5f9;cursor:pointer;border:1px solid rgba(255,255,255,0.2);transition:all 0.2s;text-decoration:none;}
+    .btn-secondary:hover{border-color:rgba(255,255,255,0.4);background:rgba(255,255,255,0.05);}
+    .section-label{font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#475569;}
+    .glow-line{height:1px;background:linear-gradient(90deg,transparent,rgba(99,102,241,0.5),rgba(52,211,153,0.4),transparent);}
+    
+    
+    .reveal{opacity:0;transform:translateY(24px);transition:opacity 0.7s ease,transform 0.7s ease;}
+    .reveal.visible{opacity:1;transform:translateY(0);}
+    .reveal-delay-1{transition-delay:0.1s;} .reveal-delay-2{transition-delay:0.2s;} .reveal-delay-3{transition-delay:0.3s;} .reveal-delay-4{transition-delay:0.4s;}
+    .pain-card{background:rgba(239,68,68,0.04);border:1px solid rgba(239,68,68,0.12);border-radius:14px;padding:20px;transition:all 0.2s;cursor:default;}
+    .pain-card:hover{border-color:rgba(239,68,68,0.25);background:rgba(239,68,68,0.07);}
+    .solve-card{background:rgba(52,211,153,0.04);border:1px solid rgba(52,211,153,0.15);border-radius:14px;padding:20px;transition:all 0.2s;cursor:default;}
+    .solve-card:hover{border-color:rgba(52,211,153,0.3);background:rgba(52,211,153,0.07);}
+    .timeline-dot{width:14px;height:14px;border-radius:50%;background:#6366f1;border:2px solid rgba(99,102,241,0.4);flex-shrink:0;margin-top:2px;}
+    ::-webkit-scrollbar{width:6px;} ::-webkit-scrollbar-track{background:var(--bg);} ::-webkit-scrollbar-thumb{background:#1e293b;border-radius:3px;}
+  </style>
+</head>
+<body>
+<div id="scroll-progress"></div>
+
+<!-- NAV -->
+<div class="nav-pill-wrap">
+  <nav class="nav-pill" id="main-nav">
+    <a href="../index.html" class="nav-logo">
+      <div class="nav-logo-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5.64 5.64l2.12 2.12M16.24 16.24l2.12 2.12M5.64 18.36l2.12-2.12M16.24 7.76l2.12-2.12"/></svg>
+      </div>
+      <span class="nav-logo-name">DexDav</span>
+    </a>
+    <div class="nav-links">
+      <a href="dm0.html" class="nav-link-pill">DM0</a>
+      <a href="dexbotic.html" class="nav-link-pill">Dexbotic</a>
+      <a href="dos-w1.html" class="nav-link-pill">DOS-W1</a>
+      <a href="research.html" class="nav-link-pill active">科研高校</a>
+      <a href="vocational.html" class="nav-link-pill">职业教育</a>
+    </div>
+    <div class="nav-actions">
+      <a href="https://github.com/dexmal/dexbotic" target="_blank" class="btn btn-ghost btn-sm" aria-label="GitHub">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+        GitHub
+      </a>
+      <a href="dexbotic.html#quickstart" class="btn btn-glow btn-sm">快速开始</a>
+      <button class="nav-hamburger" id="hamburger" aria-label="菜单"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+</div>
+<div class="nav-mobile-menu" id="mobile-menu">
+  <a href="dm0.html"        class="nav-mobile-link">DM0 模型</a>
+  <a href="dexbotic.html"   class="nav-mobile-link">Dexbotic 框架</a>
+  <a href="dos-w1.html"     class="nav-mobile-link">DOS-W1 硬件</a>
+  <div class="nav-mobile-divider"></div>
+  <a href="research.html"   class="nav-mobile-link">科研高校方案</a>
+  <a href="vocational.html" class="nav-mobile-link">职业教育方案</a>
+  <div class="nav-mobile-divider"></div>
+  <a href="https://github.com/dexmal/dexbotic" target="_blank" class="nav-mobile-link">GitHub →</a>
+  <a href="dexbotic.html#quickstart" class="btn btn-blue btn-md" style="text-align:center;margin-top:4px;border-radius:10px;">快速开始</a>
+</div>
+
+<!-- HERO -->
+<section class="relative min-h-screen flex items-center dot-grid pt-24 overflow-hidden">
+  <div style="position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 30% 30%,rgba(99,102,241,0.1) 0%,transparent 60%),radial-gradient(ellipse 50% 50% at 70% 70%,rgba(52,211,153,0.07) 0%,transparent 60%);pointer-events:none;"></div>
+
+  <div class="max-w-7xl mx-auto px-6 py-24 w-full relative z-10">
+    <!-- Policy tags -->
+    <div class="flex flex-wrap gap-2 mb-8 justify-center reveal">
+      <span style="padding:5px 12px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:6px;font-size:12px;color:#a5b4fc;">《2025年政府工作报告》"人工智能+"</span>
+      <span style="padding:5px 12px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:6px;font-size:12px;color:#a5b4fc;">《"十四五"机器人产业发展规划》</span>
+      <span style="padding:5px 12px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:6px;font-size:12px;color:#a5b4fc;">教育部"新工科"建设</span>
+    </div>
+
+    <div class="max-w-3xl mx-auto text-center reveal">
+      <span class="badge mb-6" style="display:inline-flex;">具身智能科研全链路解决方案</span>
+      <h1 style="font-size:3.5rem;font-weight:900;letter-spacing:-0.03em;line-height:1.1;margin-bottom:20px;">
+        为高校实验室提供从数据采集<br>到真机验证的<span class="g-blue">完整基础设施</span>
+      </h1>
+      <p style="font-size:17px;color:#94a3b8;line-height:1.75;margin-bottom:36px;max-width:600px;margin-left:auto;margin-right:auto;">
+        省去 80% 底层踩坑时间，把精力还给算法创新。<br>
+        <strong style="color:#a5b4fc;">清华大学 · CVPR RoboChallenge · 全球评测榜单</strong>背书。
+      </p>
+      <div class="flex items-center justify-center gap-4 flex-wrap">
+        <a href="mailto:contact@dexmal.com" class="btn btn-blue" style="padding:13px 28px;">申请演示</a>
+        <a href="#solution" class="btn btn-ghost" style="padding:13px 28px;">了解方案详情</a>
+      </div>
+    </div>
+  </div>
+  <div style="position:absolute;bottom:0;left:0;right:0;height:100px;background:linear-gradient(transparent,var(--bg));pointer-events:none;"></div>
+</section>
+
+<!-- PAIN POINTS -->
+<section class="py-24" style="background:var(--bg);">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="text-center mb-14 reveal">
+      <div class="t-label mb-3">PAIN POINTS · 来自一线调研</div>
+      <h2 style="font-size:2.4rem;font-weight:900;letter-spacing:-0.03em;">科研团队面临的<span style="color:#fca5a5;">六大核心痛点</span></h2>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div class="pain-card reveal">
+        <div class="flex items-start gap-3">
+          <div style="width:28px;height:28px;background:rgba(239,68,68,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:15px;color:#fca5a5;margin-bottom:6px;">软硬件适配困难</div>
+            <p style="font-size:13px;color:#64748b;line-height:1.6;">时间浪费在调底层、写 ROS 通信；设备接口不统一，框架混乱。</p>
+          </div>
+        </div>
+      </div>
+      <div class="pain-card reveal reveal-delay-1">
+        <div class="flex items-start gap-3">
+          <div style="width:28px;height:28px;background:rgba(239,68,68,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:15px;color:#fca5a5;margin-bottom:6px;">数据采集繁琐</div>
+            <p style="font-size:13px;color:#64748b;line-height:1.6;">真机采集操作复杂，无法体系化管理质检和标注，效率低下。</p>
+          </div>
+        </div>
+      </div>
+      <div class="pain-card reveal reveal-delay-2">
+        <div class="flex items-start gap-3">
+          <div style="width:28px;height:28px;background:rgba(239,68,68,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:15px;color:#fca5a5;margin-bottom:6px;">模型训练门槛高</div>
+            <p style="font-size:13px;color:#64748b;line-height:1.6;">数据-模型-推理流程长，环境多，科研结果难复现。</p>
+          </div>
+        </div>
+      </div>
+      <div class="pain-card reveal">
+        <div class="flex items-start gap-3">
+          <div style="width:28px;height:28px;background:rgba(239,68,68,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:15px;color:#fca5a5;margin-bottom:6px;">缺乏统一评测标准</div>
+            <p style="font-size:13px;color:#64748b;line-height:1.6;">无统一 Benchmark，成果可信度低，结果难对比，论文难发。</p>
+          </div>
+        </div>
+      </div>
+      <div class="pain-card reveal reveal-delay-1">
+        <div class="flex items-start gap-3">
+          <div style="width:28px;height:28px;background:rgba(239,68,68,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:15px;color:#fca5a5;margin-bottom:6px;">Sim2Real 差异大</div>
+            <p style="font-size:13px;color:#64748b;line-height:1.6;">仿真跑得飞起，真机直接趴窝。仿真成功率严重高估实际性能。</p>
+          </div>
+        </div>
+      </div>
+      <div class="pain-card reveal reveal-delay-2">
+        <div class="flex items-start gap-3">
+          <div style="width:28px;height:28px;background:rgba(239,68,68,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:15px;color:#fca5a5;margin-bottom:6px;">科研成果落地难</div>
+            <p style="font-size:13px;color:#64748b;line-height:1.6;">论文发表缺真机背书，科研与产业脱节，成果转化率低。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SOLUTION PIPELINE -->
+<section id="solution" class="py-24" style="background:rgba(255,255,255,0.012);">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="text-center mb-14 reveal">
+      <div class="t-label mb-3">FULL-STACK SOLUTION</div>
+      <h2 style="font-size:2.4rem;font-weight:900;letter-spacing:-0.03em;">全链路<span class="g-blue">解决方案架构</span></h2>
+    </div>
+
+    <!-- Flow diagram -->
+    <div class="max-w-4xl mx-auto reveal">
+      <div class="grid grid-cols-1 gap-0">
+        <!-- Step 1 -->
+        <div class="flex gap-6 items-start">
+          <div style="display:flex;flex-direction:column;align-items:center;">
+            <div style="width:48px;height:48px;background:linear-gradient(135deg,#6366f1,#4f46e5);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:900;font-size:18px;color:white;">1</div>
+            <div style="width:2px;flex:1;min-height:40px;background:rgba(99,102,241,0.2);margin-top:8px;margin-bottom:8px;"></div>
+          </div>
+          <div class="card glass-card rounded-xl p-5 flex-1 mb-0" style="margin-bottom:16px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+              <h3 style="font-weight:800;font-size:16px;">DOS-W1 硬件平台</h3>
+              <span class="badge" style="font-size:10px;padding:2px 8px;">自研开源</span>
+            </div>
+            <p style="font-size:13px;color:#64748b;line-height:1.7;">安装配置 DOS-W1，部署数据管理系统。主从分离 17 DOF 双臂，开箱即用，协助复现基线模型环境。</p>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="flex gap-6 items-start">
+          <div style="display:flex;flex-direction:column;align-items:center;">
+            <div style="width:48px;height:48px;background:linear-gradient(135deg,#0ea5e9,#0284c7);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:900;font-size:18px;color:white;">2</div>
+            <div style="width:2px;flex:1;min-height:40px;background:rgba(14,165,233,0.2);margin-top:8px;margin-bottom:8px;"></div>
+          </div>
+          <div class="card glass-card rounded-xl p-5 flex-1" style="margin-bottom:16px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+              <h3 style="font-weight:800;font-size:16px;">一站式数据管理平台</h3>
+            </div>
+            <p style="font-size:13px;color:#64748b;line-height:1.7;">采集实时可视化 · 数据质检 · 标注平台 · .OpenPDD 格式存储。体系化管理全流程数据，告别手工整理。</p>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="flex gap-6 items-start">
+          <div style="display:flex;flex-direction:column;align-items:center;">
+            <div style="width:48px;height:48px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:900;font-size:18px;color:white;">3</div>
+            <div style="width:2px;flex:1;min-height:40px;background:rgba(139,92,246,0.2);margin-top:8px;margin-bottom:8px;"></div>
+          </div>
+          <div class="card glass-card rounded-xl p-5 flex-1" style="margin-bottom:16px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+              <h3 style="font-weight:800;font-size:16px;">模型训练推理平台（Dexbotic）</h3>
+            </div>
+            <p style="font-size:13px;color:#64748b;line-height:1.7;">集成 Dexbotic 框架，DM0 预训练基座起步。整合算力管理、训练状态可视化，一平台覆盖数据→模型→推理全链路。</p>
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="flex gap-6 items-start">
+          <div style="display:flex;flex-direction:column;align-items:center;">
+            <div style="width:48px;height:48px;background:linear-gradient(135deg,#22c55e,#16a34a);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:900;font-size:18px;color:white;">4</div>
+            <div style="width:2px;flex:1;min-height:40px;background:rgba(34,197,94,0.2);margin-top:8px;margin-bottom:8px;"></div>
+          </div>
+          <div class="card glass-card rounded-xl p-5 flex-1" style="margin-bottom:16px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+              <h3 style="font-weight:800;font-size:16px;">真机部署验证</h3>
+            </div>
+            <p style="font-size:13px;color:#64748b;line-height:1.7;">DOS-W1 远程真机推理，支持验证自己训练的模型。跑通真机测试结果，为论文提供可复现的真实数据支撑。</p>
+          </div>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="flex gap-6 items-start">
+          <div style="display:flex;flex-direction:column;align-items:center;">
+            <div style="width:48px;height:48px;background:linear-gradient(135deg,#fbbf24,#d97706);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+            </div>
+          </div>
+          <div class="card glass-card rounded-xl p-5 flex-1" style="border-color:rgba(251,191,36,0.25);background:rgba(251,191,36,0.04);">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+              <h3 style="font-weight:800;font-size:16px;color:#fbbf24;">全球权威真机评测（RoboChallenge）</h3>
+            </div>
+            <p style="font-size:13px;color:#64748b;line-height:1.7;">直通 RoboChallenge 全球真机评测榜单，获得权威背书。论文发表有真机数据，成果可信度大幅提升，科研产业双赢。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 ADVANTAGES -->
+<section class="py-24" style="background:var(--bg);">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="text-center mb-14 reveal">
+      <div class="t-label mb-3">ADVANTAGES</div>
+      <h2 style="font-size:2.4rem;font-weight:900;letter-spacing:-0.03em;">方案<span class="g-blue">四大核心优势</span></h2>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div class="card glass-card rounded-2xl p-6 reveal cursor-default text-center">
+        <div style="width:52px;height:52px;background:rgba(99,102,241,0.15);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="1.8"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
+        <h3 style="font-weight:800;font-size:18px;color:#818cf8;margin-bottom:8px;">降门槛</h3>
+        <p style="font-size:13px;color:#64748b;line-height:1.7;">开箱即用，DOS-W1 + 软件平台一体化，适配便捷，省去 80% 底层踩坑时间。</p>
+      </div>
+      <div class="card glass-card rounded-2xl p-6 reveal reveal-delay-1 cursor-default text-center">
+        <div style="width:52px;height:52px;background:rgba(251,191,36,0.12);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="#fbbf24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+        </div>
+        <h3 style="font-weight:800;font-size:18px;color:#fbbf24;margin-bottom:8px;">强可信</h3>
+        <p style="font-size:13px;color:#64748b;line-height:1.7;">真机验证，全球权威评测榜单背书，彻底解决可复现质疑，论文成果更有说服力。</p>
+      </div>
+      <div class="card glass-card rounded-2xl p-6 reveal reveal-delay-2 cursor-default text-center">
+        <div style="width:52px;height:52px;background:rgba(52,211,153,0.12);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="1.8"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        </div>
+        <h3 style="font-weight:800;font-size:18px;color:#34d399;margin-bottom:8px;">提效率</h3>
+        <p style="font-size:13px;color:#64748b;line-height:1.7;">数据采集、训练效率大幅提升，发 Paper 速度提升一倍，从容按期毕业。</p>
+      </div>
+      <div class="card glass-card rounded-2xl p-6 reveal reveal-delay-3 cursor-default text-center">
+        <div style="width:52px;height:52px;background:rgba(96,165,250,0.15);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <h3 style="font-weight:800;font-size:18px;color:#60a5fa;margin-bottom:8px;">促落地</h3>
+        <p style="font-size:13px;color:#64748b;line-height:1.7;">助力论文发表及商业项目对接，科研成果有背书，院校影响力和就业率双提升。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3-LEVEL BENEFITS -->
+<section class="py-24" style="background:rgba(255,255,255,0.012);">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="text-center mb-14 reveal">
+      <div class="t-label mb-3">MULTI-LEVEL VALUE</div>
+      <h2 style="font-size:2.4rem;font-weight:900;letter-spacing:-0.03em;">三层<span class="g-blue">价值收益</span></h2>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- University -->
+      <div class="card glass-card rounded-2xl p-7 reveal" style="border-color:rgba(99,102,241,0.2);">
+        <div style="width:44px;height:44px;background:rgba(99,102,241,0.15);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="1.8"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+        </div>
+        <h3 style="font-weight:800;font-size:17px;margin-bottom:6px;">院校 / 管理层</h3>
+        <p style="font-size:13px;color:#818cf8;margin-bottom:14px;">战略布局 · 先发优势</p>
+        <div class="space-y-2.5">
+          <div class="flex items-start gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2.5" style="margin-top:1px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg><span style="font-size:13px;color:#94a3b8;">建立领域绝对标杆，极大提升国家重大科研项目立项通过率</span></div>
+          <div class="flex items-start gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2.5" style="margin-top:1px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg><span style="font-size:13px;color:#94a3b8;">占据高等教育先发优势</span></div>
+          <div class="flex items-start gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2.5" style="margin-top:1px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg><span style="font-size:13px;color:#94a3b8;">"全栈教学-顶级科研-全球评测-产业转化"完美闭环</span></div>
+          <div class="flex items-start gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2.5" style="margin-top:1px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg><span style="font-size:13px;color:#94a3b8;">联合发表论文 / 实验室生态共建 / 教学课程共建</span></div>
+        </div>
+      </div>
+
+      <!-- Professor -->
+      <div class="card glass-card rounded-2xl p-7 reveal reveal-delay-1" style="border-color:rgba(251,191,36,0.2);">
+        <div style="width:44px;height:44px;background:rgba(251,191,36,0.12);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="1.8"><circle cx="12" cy="7" r="4"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></svg>
+        </div>
+        <h3 style="font-weight:800;font-size:17px;margin-bottom:6px;">教授 / PI</h3>
+        <p style="font-size:13px;color:#fbbf24;margin-bottom:14px;">科研提速 · 成果背书</p>
+        <div class="space-y-2.5">
+          <div class="flex items-start gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2.5" style="margin-top:1px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg><span style="font-size:13px;color:#94a3b8;">协助快速搭建实验环境，无需自行采购整合</span></div>
+          <div class="flex items-start gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2.5" style="margin-top:1px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg><span style="font-size:13px;color:#94a3b8;">复现基线模型，快速跑通真机测试</span></div>
+          <div class="flex items-start gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2.5" style="margin-top:1px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg><span style="font-size:13px;color:#94a3b8;">联合参加国际顶级竞赛（CVPR RoboChallenge）</span></div>
+          <div class="flex items-start gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2.5" style="margin-top:1px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg><span style="font-size:13px;color:#94a3b8;">为论文提供全球权威真机评测强力背书</span></div>
+        </div>
+      </div>
+
+      <!-- Student -->
+      <div class="card glass-card rounded-2xl p-7 reveal reveal-delay-2" style="border-color:rgba(52,211,153,0.2);">
+        <div style="width:44px;height:44px;background:rgba(52,211,153,0.12);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        </div>
+        <h3 style="font-weight:800;font-size:17px;margin-bottom:6px;">研究生</h3>
+        <p style="font-size:13px;color:#34d399;margin-bottom:14px;">提效毕业 · 聚焦创新</p>
+        <div class="space-y-2.5">
+          <div class="flex items-start gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2.5" style="margin-top:1px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg><span style="font-size:13px;color:#94a3b8;">彻底省去 80% 底层踩坑时间</span></div>
+          <div class="flex items-start gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2.5" style="margin-top:1px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg><span style="font-size:13px;color:#94a3b8;">发 Paper 速度提升一倍，从容按期毕业</span></div>
+          <div class="flex items-start gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2.5" style="margin-top:1px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg><span style="font-size:13px;color:#94a3b8;">把宝贵精力还给算法创新</span></div>
+          <div class="flex items-start gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2.5" style="margin-top:1px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg><span style="font-size:13px;color:#94a3b8;">真机实验结果有全球榜单背书，简历更有竞争力</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CASE STUDY: TSINGHUA -->
+<section class="py-24" style="background:var(--bg);">
+  <div class="max-w-5xl mx-auto px-6">
+    <div class="text-center mb-14 reveal">
+      <div class="t-label mb-3">CASE STUDY</div>
+      <h2 style="font-size:2.2rem;font-weight:900;letter-spacing:-0.03em;">标杆案例：<span class="g-blue">清华大学</span></h2>
+    </div>
+
+    <div class="card glass-card rounded-2xl p-8 reveal" style="border-color:rgba(99,102,241,0.2);">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Phase 1 -->
+        <div style="border-right:1px solid rgba(255,255,255,0.06);padding-right:24px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+            <div style="width:30px;height:30px;background:rgba(99,102,241,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#818cf8;flex-shrink:0;">1</div>
+            <span style="font-size:12px;color:#6366f1;font-weight:600;letter-spacing:0.05em;">基础科研建设</span>
+          </div>
+          <h4 style="font-weight:700;font-size:15px;margin-bottom:8px;color:#f1f5f9;">环境搭建</h4>
+          <p style="font-size:13px;color:#64748b;line-height:1.7;">安装配置 DOS-W1，部署数据管理 + 训练推理平台；协助复现基线模型，跑通真机测试结果。</p>
+        </div>
+        <!-- Phase 2 -->
+        <div style="border-right:1px solid rgba(255,255,255,0.06);padding-right:24px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+            <div style="width:30px;height:30px;background:rgba(251,191,36,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fbbf24;flex-shrink:0;">2</div>
+            <span style="font-size:12px;color:#fbbf24;font-weight:600;letter-spacing:0.05em;">深度创新</span>
+          </div>
+          <h4 style="font-weight:700;font-size:15px;margin-bottom:8px;color:#f1f5f9;">竞赛 &amp; 论文</h4>
+          <p style="font-size:13px;color:#64748b;line-height:1.7;">清华学生用自己训练的模型参加 <strong style="color:#fbbf24;">CVPR RoboChallenge 2026</strong>，为论文发表提供真机评测背书。</p>
+        </div>
+        <!-- Phase 3 -->
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+            <div style="width:30px;height:30px;background:rgba(52,211,153,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#34d399;flex-shrink:0;">3</div>
+            <span style="font-size:12px;color:#34d399;font-weight:600;letter-spacing:0.05em;">生态共建</span>
+          </div>
+          <h4 style="font-weight:700;font-size:15px;margin-bottom:8px;color:#f1f5f9;">战略合作</h4>
+          <p style="font-size:13px;color:#64748b;line-height:1.7;">与清华大学汪玉教授团队及无问芯穹达成<strong style="color:#34d399;">战略合作</strong>，联合研发具身智能 PyTorch 生态。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Partner universities -->
+    <div class="mt-10 reveal">
+      <div class="t-label mb-5 text-center">合作高校（部分）</div>
+      <div class="flex flex-wrap justify-center gap-3">
+        <div style="padding:8px 20px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;font-size:13px;color:#475569;font-weight:500;">清华大学</div>
+        <div style="padding:8px 20px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;font-size:13px;color:#475569;font-weight:500;">浙江大学</div>
+        <div style="padding:8px 20px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;font-size:13px;color:#475569;font-weight:500;">上海交通大学</div>
+        <div style="padding:8px 20px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;font-size:13px;color:#475569;font-weight:500;">北京大学</div>
+        <div style="padding:8px 20px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;font-size:13px;color:#475569;font-weight:500;">复旦大学</div>
+        <div style="padding:8px 20px;background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.2);border-radius:8px;font-size:13px;color:#818cf8;font-weight:500;">更多合作中...</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="py-24" style="background:linear-gradient(135deg,rgba(99,102,241,0.07) 0%,rgba(52,211,153,0.05) 100%);border-top:1px solid rgba(255,255,255,0.05);">
+  <div class="max-w-3xl mx-auto px-6 text-center reveal">
+    <h2 style="font-size:2.5rem;font-weight:900;letter-spacing:-0.03em;margin-bottom:16px;">开始你的<span class="g-blue">实验室部署</span></h2>
+    <p style="color:#94a3b8;font-size:16px;line-height:1.7;margin-bottom:36px;">无论你是高校教授、博士生还是科研团队，我们都能为你量身定制部署方案。</p>
+    <div class="flex items-center justify-center gap-4 flex-wrap mb-8">
+      <a href="mailto:contact@dexmal.com" class="btn btn-blue" style="padding:14px 32px;font-size:15px;">申请实验室部署</a>
+      <a href="#" class="btn btn-ghost" style="padding:14px 32px;font-size:15px;">下载方案介绍 PDF</a>
+    </div>
+    <a href="dos-w1.html" style="color:#818cf8;font-size:14px;text-decoration:none;">了解 DOS-W1 硬件详情 →</a>
+  </div>
+</section>
+
+<footer style="background:#020817;border-top:1px solid rgba(255,255,255,0.05);padding:32px 0;">
+  <div class="max-w-7xl mx-auto px-6 flex items-center justify-between flex-wrap gap-4">
+    <a href="../index.html" class="btn btn-ghost btn-sm">← 返回 DexDav 首页</a>
+    <span style="color:#334155;font-size:13px;">© 2026 Dexmal 原力灵机 · MIT License</span>
+  </div>
+</footer>
+
+<script>
+const io = new IntersectionObserver((e) => {
+  e.forEach(en => { if (en.isIntersecting) { en.target.classList.add('visible'); io.unobserve(en.target); } });
+}, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+</script>
+
+<script>
+// Scroll progress
+const _sp = document.getElementById('scroll-progress');
+if (_sp) window.addEventListener('scroll', () => {
+  _sp.style.transform = 'scaleX(' + window.scrollY/(document.documentElement.scrollHeight-window.innerHeight) + ')';
+}, {passive:true});
+// Nav scroll state
+const _nav = document.getElementById('main-nav');
+if (_nav) window.addEventListener('scroll', () => _nav.classList.toggle('scrolled', window.scrollY>60), {passive:true});
+// Hamburger
+const _hb = document.getElementById('hamburger'), _mm = document.getElementById('mobile-menu');
+if (_hb) {
+  _hb.addEventListener('click', () => { _hb.classList.toggle('open'); _mm.classList.toggle('open'); });
+  document.addEventListener('click', e => { if (!_hb.contains(e.target) && !_mm.contains(e.target)) { _hb.classList.remove('open'); _mm.classList.remove('open'); }});
+}
+// Scroll reveal
+const _io = new IntersectionObserver(e => e.forEach(en => { if(en.isIntersecting){en.target.classList.add('visible');_io.unobserve(en.target);}}), {threshold:0.08,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.reveal,.reveal-left').forEach(el=>_io.observe(el));
+// Counters
+const _co = new IntersectionObserver(e => e.forEach(en => {
+  if(!en.isIntersecting)return;
+  const el=en.target,t=parseFloat(el.dataset.count),s=el.dataset.suffix||'',f=String(t).includes('.');
+  let st=null;(function step(ts){if(!st)st=ts;const p=Math.min((ts-st)/1300,1),ease=1-Math.pow(1-p,3);
+  el.textContent=(f?(t*ease).toFixed(1):Math.floor(t*ease))+s;if(p<1)requestAnimationFrame(step);})(performance.now());
+  _co.unobserve(el);
+}),{threshold:0.5});
+document.querySelectorAll('[data-count]').forEach(el=>_co.observe(el));
+// Benchmark bars
+const _bc = document.getElementById('bench-chart');
+if(_bc){const _bi=new IntersectionObserver(e=>{if(!e[0].isIntersecting)return;
+  _bc.querySelectorAll('.bench-fill').forEach(b=>{const w=parseFloat(b.dataset.width);setTimeout(()=>{b.style.width=(w/62*100)+'%';},250);});
+  _bc.querySelectorAll('.bench-val').forEach(v=>{const t=parseFloat(v.dataset.val);let st=null;
+  (function step(ts){if(!st)st=ts;const p=Math.min((ts-st)/1100,1),ease=1-Math.pow(1-p,3);v.textContent=(t*ease).toFixed(1)+'%';if(p<1)requestAnimationFrame(step);})(performance.now());});
+  _bi.unobserve(_bc);},{threshold:0.3});_bi.observe(_bc);}
+// Copy
+function copyCode(btn){const pre=btn.previousElementSibling;navigator.clipboard.writeText(pre.innerText).then(()=>{btn.textContent='copied!';btn.classList.add('copied');setTimeout(()=>{btn.textContent='copy';btn.classList.remove('copied');},2000);}).catch(()=>{});}
+</script>
+
+</body>
+</html>
